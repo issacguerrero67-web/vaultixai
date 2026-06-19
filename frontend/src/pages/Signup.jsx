@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 const geistFontLink = document.createElement('link')
@@ -10,6 +10,7 @@ if (!document.head.querySelector('[href*="Geist"]')) {
 }
 
 export default function Signup() {
+  const navigate = useNavigate()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -30,7 +31,7 @@ export default function Signup() {
     }
 
     setLoading(true)
-    const { error: authError } = await supabase.auth.signUp({
+    const { data, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName } },
@@ -39,6 +40,8 @@ export default function Signup() {
     if (authError) {
       setError(authError.message)
       setLoading(false)
+    } else if (data.session) {
+      navigate('/dashboard')
     } else {
       setSuccess(true)
       setLoading(false)
