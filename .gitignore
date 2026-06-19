@@ -1,3 +1,5 @@
 node_modules/
 .DS_Store
 *.log
+
+.claude/skills/ui-ux-pro-max/scripts/__pycache__
