@@ -1,0 +1,3 @@
+export default function ReportDetail() {
+  return <div className="min-h-screen flex items-center justify-center"><p>Report Detail — coming soon</p></div>
+}
