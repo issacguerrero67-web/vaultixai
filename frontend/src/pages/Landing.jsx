@@ -1,7 +1,16 @@
 import { Link } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export default function Landing() {
+  const [waitlistEmail, setWaitlistEmail] = useState('')
+  const [waitlistDone, setWaitlistDone] = useState(false)
+  const [waitlistFocused, setWaitlistFocused] = useState(false)
+
+  function handleWaitlist(e) {
+    e.preventDefault()
+    if (waitlistEmail) setWaitlistDone(true)
+  }
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -53,15 +62,15 @@ export default function Landing() {
             onMouseEnter={e => e.target.style.color = '#F5F4F0'}
             onMouseLeave={e => e.target.style.color = '#888884'}>Pricing</a>
         </div>
-        <Link to="/signup" style={{
+        <a href="#waitlist" style={{
           background: '#3B82F6', color: '#fff', padding: '8px 18px',
           borderRadius: 6, fontSize: 13, fontWeight: 500, textDecoration: 'none',
           transition: 'background 150ms'
         }}
           onMouseEnter={e => e.target.style.background = '#2563EB'}
           onMouseLeave={e => e.target.style.background = '#3B82F6'}>
-          Start Free Trial
-        </Link>
+          Join Waitlist
+        </a>
       </nav>
 
       {/* HERO */}
@@ -91,15 +100,15 @@ export default function Landing() {
             Vaultix AI connects to your AWS account, scans every resource for waste, and delivers a prioritized fix list with specific resource IDs and exact dollar amounts.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
-            <Link to="/signup" style={{
+            <a href="#waitlist" style={{
               background: '#F5F4F0', color: '#111110', padding: '11px 24px',
               borderRadius: 7, fontSize: 14, fontWeight: 600, textDecoration: 'none',
               transition: 'all 150ms', display: 'inline-block'
             }}
               onMouseEnter={e => { e.target.style.background = '#E5E4E0'; e.target.style.transform = 'translateY(-1px)' }}
               onMouseLeave={e => { e.target.style.background = '#F5F4F0'; e.target.style.transform = 'translateY(0)' }}>
-              Start Free Trial
-            </Link>
+              Join Waitlist
+            </a>
             <a href="#process" style={{
               background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)',
               padding: '11px 24px', borderRadius: 7, fontSize: 14,
@@ -232,11 +241,11 @@ export default function Landing() {
                 </li>
               ))}
             </ul>
-            <Link to="/signup" style={{ display: 'block', width: '100%', padding: 11, borderRadius: 7, fontSize: 14, fontWeight: 500, textAlign: 'center', background: 'transparent', color: '#F5F4F0', border: '1px solid #2A2A28', textDecoration: 'none', transition: 'all 150ms' }}
-              onMouseEnter={e => { e.target.style.borderColor = '#3A3A38'; e.target.style.background = '#161614' }}
-              onMouseLeave={e => { e.target.style.borderColor = '#2A2A28'; e.target.style.background = 'transparent' }}>
-              Start Free Trial
-            </Link>
+            <a href="#waitlist" style={{ display: 'block', width: '100%', padding: 11, borderRadius: 7, fontSize: 14, fontWeight: 500, textAlign: 'center', background: 'transparent', color: '#F5F4F0', border: '1px solid #2A2A28', textDecoration: 'none', transition: 'all 150ms' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#3A3A38'; e.currentTarget.style.background = '#161614' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#2A2A28'; e.currentTarget.style.background = 'transparent' }}>
+              Join Waitlist
+            </a>
           </div>
           {/* TEAM */}
           <div className="fade-up" style={{ background: '#050E1A', border: '2px solid #3B82F6', borderRadius: 10, padding: '2rem', position: 'relative', transition: 'border-color 200ms' }}
@@ -255,11 +264,11 @@ export default function Landing() {
                 </li>
               ))}
             </ul>
-            <Link to="/signup" style={{ display: 'block', width: '100%', padding: 11, borderRadius: 7, fontSize: 14, fontWeight: 500, textAlign: 'center', background: '#3B82F6', color: '#fff', border: 'none', textDecoration: 'none', transition: 'background 150ms' }}
-              onMouseEnter={e => e.target.style.background = '#2563EB'}
-              onMouseLeave={e => e.target.style.background = '#3B82F6'}>
-              Start Free Trial
-            </Link>
+            <a href="#waitlist" style={{ display: 'block', width: '100%', padding: 11, borderRadius: 7, fontSize: 14, fontWeight: 500, textAlign: 'center', background: '#3B82F6', color: '#fff', border: 'none', textDecoration: 'none', transition: 'background 150ms' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#2563EB'}
+              onMouseLeave={e => e.currentTarget.style.background = '#3B82F6'}>
+              Join Waitlist
+            </a>
           </div>
         </div>
 
@@ -278,6 +287,63 @@ export default function Landing() {
             onMouseLeave={e => { e.target.style.borderColor = '#2A2A28'; e.target.style.background = 'transparent' }}>
             Book Your Audit →
           </a>
+        </div>
+      </section>
+
+      {/* WAITLIST */}
+      <section id="waitlist" style={{ background: '#0E0E0C', borderTop: '1px solid #1E1E1C', padding: '5rem 2.5rem' }}>
+        <div className="fade-up" style={{ maxWidth: 480, margin: '0 auto', textAlign: 'center' }}>
+          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#3B82F6', marginBottom: '1rem' }}>
+            EARLY ACCESS
+          </p>
+          <h2 style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: '1rem', color: '#F5F4F0' }}>
+            Be first when we launch.
+          </h2>
+          <p style={{ fontSize: '0.95rem', color: '#888884', lineHeight: 1.75, marginBottom: '2rem' }}>
+            Join the waitlist and get 30 days free when Vaultix AI opens to the public.
+          </p>
+
+          {waitlistDone ? (
+            <div style={{
+              background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)',
+              borderRadius: 8, padding: '1.25rem', color: '#6EE7B7', fontSize: 14, fontWeight: 500
+            }}>
+              You're on the list. We'll email you at launch.
+            </div>
+          ) : (
+            <form onSubmit={handleWaitlist} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <input
+                type="email"
+                required
+                placeholder="you@company.com"
+                value={waitlistEmail}
+                onChange={e => setWaitlistEmail(e.target.value)}
+                onFocus={() => setWaitlistFocused(true)}
+                onBlur={() => setWaitlistFocused(false)}
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  background: '#0D0D0D',
+                  border: `1px solid ${waitlistFocused ? '#3B82F6' : '#222220'}`,
+                  borderRadius: 8, padding: '11px 14px',
+                  fontSize: 14, color: '#F5F4F0', outline: 'none',
+                  transition: 'border-color 150ms',
+                }}
+              />
+              <button
+                type="submit"
+                style={{
+                  width: '100%', background: '#3B82F6', color: '#fff',
+                  border: 'none', borderRadius: 8, padding: '11px 0',
+                  fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                  transition: 'background 150ms, transform 150ms',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#2563EB'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#3B82F6'; e.currentTarget.style.transform = 'translateY(0)' }}
+              >
+                Join Waitlist →
+              </button>
+            </form>
+          )}
         </div>
       </section>
 
