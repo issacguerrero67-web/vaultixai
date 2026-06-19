@@ -8,7 +8,10 @@ import Reports from './pages/Reports'
 import ReportDetail from './pages/ReportDetail'
 import Settings from './pages/Settings'
 
-// Placeholder auth guard — replace with real Supabase session check
+// Auth protection lives in each protected page via supabase.auth.getSession().
+// This wrapper is intentionally passive — no redirect here — so that email
+// confirmation links (which trigger onAuthStateChange) don't interfere with
+// the user's current location. Login redirects to /dashboard explicitly.
 function RequireAuth({ children }) {
   return children
 }

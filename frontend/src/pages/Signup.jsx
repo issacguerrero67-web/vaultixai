@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 const geistFontLink = document.createElement('link')
@@ -10,12 +10,12 @@ if (!document.head.querySelector('[href*="Geist"]')) {
 }
 
 export default function Signup() {
-  const navigate = useNavigate()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
   const [nameFocused, setNameFocused] = useState(false)
   const [emailFocused, setEmailFocused] = useState(false)
   const [passwordFocused, setPasswordFocused] = useState(false)
@@ -40,7 +40,8 @@ export default function Signup() {
       setError(authError.message)
       setLoading(false)
     } else {
-      navigate('/dashboard')
+      setSuccess(true)
+      setLoading(false)
     }
   }
 
@@ -121,6 +122,33 @@ export default function Signup() {
             </Link>
           </p>
 
+          {/* Success state */}
+          {success ? (
+            <div style={{
+              backgroundColor: 'rgba(16, 185, 129, 0.08)',
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              borderRadius: '8px',
+              padding: '20px',
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: '24px', marginBottom: '12px' }}>✉️</div>
+              <div style={{ color: '#6EE7B7', fontSize: '15px', fontWeight: 600, marginBottom: '8px' }}>
+                Check your email
+              </div>
+              <div style={{ color: '#888884', fontSize: '14px', lineHeight: 1.6 }}>
+                Check your email to confirm your account, then sign in.
+              </div>
+              <Link to="/login" style={{
+                display: 'inline-block', marginTop: '16px',
+                color: '#3B82F6', fontSize: '14px', textDecoration: 'none', fontWeight: 500,
+              }}
+                onMouseEnter={e => e.target.style.textDecoration = 'underline'}
+                onMouseLeave={e => e.target.style.textDecoration = 'none'}>
+                Go to sign in →
+              </Link>
+            </div>
+          ) : (
+            <>
           {/* Error box */}
           {error && (
             <div style={{
@@ -239,6 +267,8 @@ export default function Signup() {
               Privacy Policy
             </a>.
           </p>
+            </>
+          )}
         </div>
       </div>
     </div>
