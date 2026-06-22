@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
 
 const MOBILE_CSS = `
   @media (max-width: 768px) {
@@ -31,11 +32,21 @@ const MOBILE_CSS = `
 export default function Landing() {
   const [waitlistEmail, setWaitlistEmail] = useState('')
   const [waitlistDone, setWaitlistDone] = useState(false)
+  const [waitlistError, setWaitlistError] = useState('')
+  const [waitlistLoading, setWaitlistLoading] = useState(false)
   const [waitlistFocused, setWaitlistFocused] = useState(false)
 
-  function handleWaitlist(e) {
+  async function handleWaitlist(e) {
     e.preventDefault()
-    if (waitlistEmail) setWaitlistDone(true)
+    setWaitlistError('')
+    setWaitlistLoading(true)
+    const { error } = await supabase.from('waitlist').insert({ email: waitlistEmail })
+    setWaitlistLoading(false)
+    if (error) {
+      setWaitlistError('This email is already on the waitlist.')
+    } else {
+      setWaitlistDone(true)
+    }
   }
 
   useEffect(() => {
@@ -337,7 +348,7 @@ export default function Landing() {
               background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)',
               borderRadius: 8, padding: '1.25rem', color: '#6EE7B7', fontSize: 14, fontWeight: 500
             }}>
-              You're on the list. We'll email you at launch.
+              You're on the list! We'll be in touch.
             </div>
           ) : (
             <form onSubmit={handleWaitlist} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -346,30 +357,37 @@ export default function Landing() {
                 required
                 placeholder="you@company.com"
                 value={waitlistEmail}
-                onChange={e => setWaitlistEmail(e.target.value)}
+                onChange={e => { setWaitlistEmail(e.target.value); setWaitlistError('') }}
                 onFocus={() => setWaitlistFocused(true)}
                 onBlur={() => setWaitlistFocused(false)}
                 style={{
                   width: '100%', boxSizing: 'border-box',
                   background: '#0D0D0D',
-                  border: `1px solid ${waitlistFocused ? '#3B82F6' : '#222220'}`,
+                  border: `1px solid ${waitlistError ? 'rgba(239,68,68,0.5)' : waitlistFocused ? '#3B82F6' : '#222220'}`,
                   borderRadius: 8, padding: '11px 14px',
                   fontSize: 14, color: '#F5F4F0', outline: 'none',
                   transition: 'border-color 150ms',
                 }}
               />
+              {waitlistError && (
+                <p style={{ fontSize: 13, color: '#FCA5A5', margin: 0, textAlign: 'left' }}>
+                  {waitlistError}
+                </p>
+              )}
               <button
                 type="submit"
+                disabled={waitlistLoading}
                 style={{
                   width: '100%', background: '#3B82F6', color: '#fff',
                   border: 'none', borderRadius: 8, padding: '11px 0',
-                  fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                  fontSize: 14, fontWeight: 600, cursor: waitlistLoading ? 'not-allowed' : 'pointer',
+                  opacity: waitlistLoading ? 0.7 : 1,
                   transition: 'background 150ms, transform 150ms',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = '#2563EB'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                onMouseEnter={e => { if (!waitlistLoading) { e.currentTarget.style.background = '#2563EB'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
                 onMouseLeave={e => { e.currentTarget.style.background = '#3B82F6'; e.currentTarget.style.transform = 'translateY(0)' }}
               >
-                Join Waitlist →
+                {waitlistLoading ? 'Joining...' : 'Join Waitlist →'}
               </button>
             </form>
           )}
