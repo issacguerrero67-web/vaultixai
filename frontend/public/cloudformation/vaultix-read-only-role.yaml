@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Vaultix AI Read-Only Role - Grants Vaultix AI read-only access to scan your AWS account for cost optimization opportunities.
+
+Parameters:
+  VaultixAccountId:
+    Type: String
+    Default: '102282012674'
+    Description: The Vaultix AI AWS Account ID that will assume this role
+
+Resources:
+  VaultixReadOnlyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: VaultixReadOnlyRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${VaultixAccountId}:root'
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/ReadOnlyAccess
+      Tags:
+        - Key: CreatedBy
+          Value: VaultixAI
+        - Key: Purpose
+          Value: CostOptimizationAudit
+
+Outputs:
+  RoleArn:
+    Description: The ARN of the Vaultix read-only role
+    Value: !GetAtt VaultixReadOnlyRole.Arn
