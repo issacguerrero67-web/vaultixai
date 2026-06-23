@@ -1,0 +1,314 @@
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+
+const geistFontLink = document.createElement('link')
+geistFontLink.rel = 'stylesheet'
+geistFontLink.href = 'https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;900&display=swap'
+if (!document.head.querySelector('[href*="Geist"]')) {
+  document.head.appendChild(geistFontLink)
+}
+
+const NAV_ITEMS = [
+  { label: 'Dashboard',   icon: '⊡', path: '/dashboard' },
+  { label: 'Reports',     icon: '≡', path: '/dashboard/reports' },
+  { label: 'Connect AWS', icon: '⊕', path: '/dashboard/connect' },
+  { label: 'Billing',     icon: '◈', path: '/dashboard/billing' },
+  { label: 'Settings',    icon: '⊙', path: '/dashboard/settings' },
+]
+
+export default function Billing() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [loading, setLoading] = useState(true)
+  const [signingOut, setSigningOut] = useState(false)
+  const [userEmail, setUserEmail] = useState('')
+  const [status, setStatus] = useState(null) // { tier, subscriptionStatus, stripeCustomerId }
+  const [checkoutLoading, setCheckoutLoading] = useState(null) // 'standard' | 'team' | null
+
+  useEffect(() => {
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { navigate('/login'); return }
+      setUserEmail(session.user.email)
+
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/stripe/status`, {
+          headers: { 'Authorization': `Bearer ${session.access_token}` },
+        })
+        if (res.ok) setStatus(await res.json())
+      } catch (err) {
+        console.error('Failed to fetch billing status:', err)
+      }
+      setLoading(false)
+    }
+    init()
+  }, [navigate])
+
+  async function handleSignOut() {
+    setSigningOut(true)
+    await supabase.auth.signOut()
+    navigate('/login')
+  }
+
+  async function startCheckout(tier) {
+    setCheckoutLoading(tier)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/stripe/create-checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ savingsAmount: 1000, tier }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (err) {
+      console.error('Checkout failed:', err)
+    }
+    setCheckoutLoading(null)
+  }
+
+  if (loading) {
+    return (
+      <div style={{
+        fontFamily: "'Geist', 'Inter', system-ui, sans-serif",
+        backgroundColor: '#111110', minHeight: '100vh',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <div style={{ color: '#666662', fontSize: 14 }}>Loading…</div>
+      </div>
+    )
+  }
+
+  const isActive = status?.subscriptionStatus === 'active'
+
+  return (
+    <div style={{
+      fontFamily: "'Geist', 'Inter', system-ui, sans-serif",
+      backgroundColor: '#111110', color: '#F5F4F0',
+      minHeight: '100vh', display: 'flex',
+    }}>
+
+      {/* ── SIDEBAR ── */}
+      <aside style={{
+        width: 240, flexShrink: 0, backgroundColor: '#0D0D0D',
+        borderRight: '1px solid #1E1E1C', display: 'flex', flexDirection: 'column',
+        position: 'fixed', top: 0, left: 0, bottom: 0,
+      }}>
+        <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #1E1E1C' }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: '50%', backgroundColor: '#3B82F6',
+              boxShadow: '0 0 8px rgba(59,130,246,0.8), 0 0 16px rgba(59,130,246,0.4)',
+              display: 'inline-block', flexShrink: 0,
+            }} />
+            <span style={{ fontWeight: 600, fontSize: 15, letterSpacing: '-0.02em', color: '#F5F4F0' }}>
+              Vaultix AI
+            </span>
+          </Link>
+        </div>
+        <nav style={{ flex: 1, padding: '12px 0', overflowY: 'auto' }}>
+          {NAV_ITEMS.map(({ label, icon, path }) => {
+            const active = location.pathname === path
+            return (
+              <Link
+                key={path}
+                to={path}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '9px 20px', fontSize: 14,
+                  fontWeight: active ? 500 : 400,
+                  color: active ? '#3B82F6' : '#888884',
+                  textDecoration: 'none',
+                  borderLeft: active ? '2px solid #3B82F6' : '2px solid transparent',
+                  backgroundColor: active ? 'rgba(59,130,246,0.06)' : 'transparent',
+                  transition: 'color 150ms, background-color 150ms',
+                }}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.color = '#F5F4F0'; e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.03)' } }}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.color = '#888884'; e.currentTarget.style.backgroundColor = 'transparent' } }}
+              >
+                <span style={{ fontSize: 16, lineHeight: 1, flexShrink: 0 }}>{icon}</span>
+                {label}
+              </Link>
+            )
+          })}
+        </nav>
+        <div style={{ padding: '16px 20px', borderTop: '1px solid #1E1E1C' }}>
+          <div style={{ fontSize: 12, color: '#666662', marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {userEmail}
+          </div>
+          <button
+            onClick={handleSignOut}
+            disabled={signingOut}
+            style={{
+              width: '100%', backgroundColor: 'transparent', border: '1px solid #1E1E1C',
+              borderRadius: 6, color: '#666662', fontSize: 13, fontWeight: 500,
+              padding: '7px 0', cursor: signingOut ? 'not-allowed' : 'pointer', transition: 'border-color 150ms, color 150ms',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#3B3B38'; e.currentTarget.style.color = '#F5F4F0' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#1E1E1C'; e.currentTarget.style.color = '#666662' }}
+          >
+            {signingOut ? 'Signing out…' : 'Sign out'}
+          </button>
+        </div>
+      </aside>
+
+      {/* ── MAIN ── */}
+      <main style={{ marginLeft: 240, flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <div style={{
+          padding: '20px 32px', borderBottom: '1px solid #1E1E1C',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <h1 style={{ fontSize: 18, fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
+            Billing
+          </h1>
+        </div>
+
+        <div style={{ padding: 32, flex: 1, maxWidth: 720 }}>
+
+          {/* Active subscription */}
+          {isActive ? (
+            <div style={{
+              backgroundColor: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.25)',
+              borderRadius: 12, padding: '28px 32px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <span style={{ fontSize: 18, color: '#34D399' }}>✓</span>
+                <h2 style={{ fontSize: 18, fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
+                  Active {status.tier?.charAt(0).toUpperCase() + status.tier?.slice(1)} Plan
+                </h2>
+              </div>
+              <p style={{ color: '#6B7280', fontSize: 14, margin: 0 }}>
+                Your subscription is active. You're on the {status.tier} plan — {status.tier === 'team' ? '15%' : '20%'} of verified monthly savings.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div style={{ marginBottom: 28 }}>
+                <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.03em', color: '#F5F4F0', margin: '0 0 8px' }}>
+                  Choose a plan
+                </h2>
+                <p style={{ color: '#6B7280', fontSize: 14, margin: 0, lineHeight: 1.7 }}>
+                  You only pay a percentage of the savings we find. No savings — no charge.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                {/* Standard */}
+                <div style={{
+                  backgroundColor: '#0D0D0D', border: '1px solid #1E1E1C',
+                  borderRadius: 12, padding: '24px 28px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: 16, flexWrap: 'wrap',
+                  transition: 'border-color 200ms',
+                }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = '#2A2A28'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = '#1E1E1C'}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontSize: 20, fontWeight: 700, color: '#F5F4F0', letterSpacing: '-0.02em' }}>Standard</span>
+                      <span style={{ fontSize: 13, color: '#6B7280' }}>— For startups and small teams</span>
+                    </div>
+                    <p style={{ fontSize: 24, fontWeight: 700, color: '#F5F4F0', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+                      20% <span style={{ fontSize: 14, fontWeight: 400, color: '#6B7280' }}>of verified savings</span>
+                    </p>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                      {['Up to 3 AWS accounts', 'Full AI audit', 'Monthly re-scans'].map(f => (
+                        <li key={f} style={{ fontSize: 13, color: '#888884', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <span style={{ color: '#3B82F6', fontSize: 12 }}>✓</span>{f}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <button
+                    onClick={() => startCheckout('standard')}
+                    disabled={!!checkoutLoading}
+                    style={{
+                      backgroundColor: checkoutLoading === 'standard' ? '#2563EB' : '#3B82F6',
+                      color: '#fff', border: 'none', borderRadius: 8,
+                      padding: '10px 22px', fontSize: 14, fontWeight: 600,
+                      cursor: checkoutLoading ? 'not-allowed' : 'pointer',
+                      opacity: checkoutLoading && checkoutLoading !== 'standard' ? 0.5 : 1,
+                      whiteSpace: 'nowrap', flexShrink: 0,
+                      transition: 'transform 150ms, box-shadow 150ms',
+                    }}
+                    onMouseEnter={e => { if (!checkoutLoading) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' } }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
+                  >
+                    {checkoutLoading === 'standard' ? 'Redirecting…' : 'Start Standard Plan (20% of savings)'}
+                  </button>
+                </div>
+
+                {/* Team */}
+                <div style={{
+                  backgroundColor: '#0D0D0D', border: '2px solid #3B82F6',
+                  borderRadius: 12, padding: '24px 28px', position: 'relative',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: 16, flexWrap: 'wrap',
+                  transition: 'border-color 200ms',
+                }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = '#60A5FA'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = '#3B82F6'}
+                >
+                  <div style={{
+                    position: 'absolute', top: -1, left: 28,
+                    backgroundColor: '#3B82F6', color: '#fff',
+                    fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
+                    padding: '3px 10px', borderRadius: '0 0 6px 6px', textTransform: 'uppercase',
+                  }}>
+                    Most Popular
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontSize: 20, fontWeight: 700, color: '#F5F4F0', letterSpacing: '-0.02em' }}>Team</span>
+                      <span style={{ fontSize: 13, color: '#6B7280' }}>— For growing engineering teams</span>
+                    </div>
+                    <p style={{ fontSize: 24, fontWeight: 700, color: '#F5F4F0', margin: '0 0 4px', letterSpacing: '-0.02em' }}>
+                      15% <span style={{ fontSize: 14, fontWeight: 400, color: '#6B7280' }}>of verified savings</span>
+                    </p>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                      {['Unlimited accounts', 'Slack alerts', 'Priority support'].map(f => (
+                        <li key={f} style={{ fontSize: 13, color: '#888884', display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <span style={{ color: '#3B82F6', fontSize: 12 }}>✓</span>{f}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <button
+                    onClick={() => startCheckout('team')}
+                    disabled={!!checkoutLoading}
+                    style={{
+                      backgroundColor: checkoutLoading === 'team' ? '#2563EB' : '#3B82F6',
+                      color: '#fff', border: 'none', borderRadius: 8,
+                      padding: '10px 22px', fontSize: 14, fontWeight: 600,
+                      cursor: checkoutLoading ? 'not-allowed' : 'pointer',
+                      opacity: checkoutLoading && checkoutLoading !== 'team' ? 0.5 : 1,
+                      whiteSpace: 'nowrap', flexShrink: 0,
+                      transition: 'transform 150ms, box-shadow 150ms',
+                    }}
+                    onMouseEnter={e => { if (!checkoutLoading) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' } }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
+                  >
+                    {checkoutLoading === 'team' ? 'Redirecting…' : 'Start Team Plan (15% of savings)'}
+                  </button>
+                </div>
+
+              </div>
+
+              <p style={{ fontSize: 12, color: '#555552', marginTop: 20, lineHeight: 1.6 }}>
+                Payments processed securely by Stripe. You'll be redirected to Stripe Checkout to complete setup.
+              </p>
+            </>
+          )}
+        </div>
+      </main>
+    </div>
+  )
+}

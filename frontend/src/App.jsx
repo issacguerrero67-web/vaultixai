@@ -7,6 +7,7 @@ import ConnectAWS from './pages/ConnectAWS'
 import Reports from './pages/Reports'
 import ReportDetail from './pages/ReportDetail'
 import Settings from './pages/Settings'
+import Billing from './pages/Billing'
 
 // Auth protection lives in each protected page via supabase.auth.getSession().
 // This wrapper is intentionally passive — no redirect here — so that email
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/dashboard/connect" element={<RequireAuth><ConnectAWS /></RequireAuth>} />
         <Route path="/dashboard/reports" element={<RequireAuth><Reports /></RequireAuth>} />
         <Route path="/dashboard/reports/:id" element={<RequireAuth><ReportDetail /></RequireAuth>} />
+        <Route path="/dashboard/billing" element={<RequireAuth><Billing /></RequireAuth>} />
         <Route path="/dashboard/settings" element={<RequireAuth><Settings /></RequireAuth>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
