@@ -44,6 +44,14 @@ COST TRENDS:
 - Flag services that appeared in billing for the first time as MEDIUM (unexpected spend)
 - Flag the top 3 most expensive services with optimization recommendations
 
+RDS INSTANCES:
+- Idle RDS instances (~0 connections, status "available" with no recent activity) — flag as HIGH severity, recommend snapshot + delete
+- Single-AZ RDS instances that look like production databases (by naming convention or instance class db.r*/db.m*) — flag as MEDIUM, recommend enabling Multi-AZ for failover
+- Unencrypted RDS storage (storageEncrypted: false) — flag as MEDIUM severity, recommend enabling encryption
+- Outdated/deprecated engine versions (MySQL < 8.0, PostgreSQL < 14, MariaDB < 10.6) — flag as MEDIUM, recommend upgrading
+- Oversized RDS instance classes relative to expected workload — flag as MEDIUM with rightsizing recommendation
+- RDS instances that are publicly accessible (publiclyAccessible: true) — flag as HIGH (security + cost risk)
+
 GENERAL BEST PRACTICES (for new/empty accounts):
 - Missing billing alerts
 - Missing CloudTrail
