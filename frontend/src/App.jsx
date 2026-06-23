@@ -8,6 +8,7 @@ import Reports from './pages/Reports'
 import ReportDetail from './pages/ReportDetail'
 import Settings from './pages/Settings'
 import Billing from './pages/Billing'
+import ResetPassword from './pages/ResetPassword'
 
 // Auth protection lives in each protected page via supabase.auth.getSession().
 // This wrapper is intentionally passive — no redirect here — so that email
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
         <Route path="/dashboard/connect" element={<RequireAuth><ConnectAWS /></RequireAuth>} />
         <Route path="/dashboard/reports" element={<RequireAuth><Reports /></RequireAuth>} />

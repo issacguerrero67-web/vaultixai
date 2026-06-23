@@ -17,6 +17,27 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [emailFocused, setEmailFocused] = useState(false)
   const [passwordFocused, setPasswordFocused] = useState(false)
+  const [forgotPassword, setForgotPassword] = useState(false)
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetEmailFocused, setResetEmailFocused] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetSuccess, setResetSuccess] = useState(false)
+  const [resetError, setResetError] = useState('')
+
+  async function handleResetPassword(e) {
+    e.preventDefault()
+    setResetError('')
+    setResetLoading(true)
+    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: 'https://vaultixai.app/reset-password',
+    })
+    setResetLoading(false)
+    if (resetErr) {
+      setResetError(resetErr.message)
+    } else {
+      setResetSuccess(true)
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -201,13 +222,88 @@ export default function Login() {
           </form>
 
           {/* Forgot password */}
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <a href="#" style={{ color: '#666662', fontSize: '13px', textDecoration: 'none' }}
-              onMouseEnter={e => e.target.style.color = '#888884'}
-              onMouseLeave={e => e.target.style.color = '#666662'}>
-              Forgot your password?
-            </a>
-          </div>
+          {!forgotPassword ? (
+            <div style={{ textAlign: 'center', marginTop: 20 }}>
+              <button
+                onClick={() => setForgotPassword(true)}
+                style={{ background: 'none', border: 'none', color: '#666662', fontSize: 13, cursor: 'pointer', padding: 0, transition: 'color 150ms' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#888884'}
+                onMouseLeave={e => e.currentTarget.style.color = '#666662'}
+              >
+                Forgot your password?
+              </button>
+            </div>
+          ) : (
+            <div style={{ marginTop: 28, borderTop: '1px solid #1E1E1C', paddingTop: 24 }}>
+              <p style={{ fontSize: 14, color: '#888884', margin: '0 0 16px' }}>
+                Enter your email and we'll send you a reset link.
+              </p>
+
+              {resetSuccess ? (
+                <div style={{
+                  backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)',
+                  borderRadius: 8, padding: '12px 16px', color: '#6EE7B7', fontSize: 14,
+                }}>
+                  Check your email for a reset link.
+                </div>
+              ) : (
+                <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {resetError && (
+                    <div style={{
+                      backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)',
+                      borderRadius: 8, padding: '10px 14px', color: '#FCA5A5', fontSize: 13,
+                    }}>
+                      {resetError}
+                    </div>
+                  )}
+                  <input
+                    type="email"
+                    required
+                    value={resetEmail}
+                    onChange={e => setResetEmail(e.target.value)}
+                    onFocus={() => setResetEmailFocused(true)}
+                    onBlur={() => setResetEmailFocused(false)}
+                    placeholder="you@company.com"
+                    style={{
+                      width: '100%', boxSizing: 'border-box',
+                      backgroundColor: '#0D0D0D',
+                      border: `1px solid ${resetEmailFocused ? '#3B82F6' : '#222220'}`,
+                      borderRadius: 8, padding: '10px 14px',
+                      fontSize: 14, color: '#F5F4F0', outline: 'none', transition: 'border-color 150ms',
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => { setForgotPassword(false); setResetError('') }}
+                      style={{
+                        flex: '0 0 auto', backgroundColor: 'transparent', border: '1px solid #222220',
+                        borderRadius: 8, padding: '9px 16px', fontSize: 13, color: '#666662',
+                        cursor: 'pointer', transition: 'border-color 150ms, color 150ms',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#3B3B38'; e.currentTarget.style.color = '#F5F4F0' }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#222220'; e.currentTarget.style.color = '#666662' }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={resetLoading}
+                      style={{
+                        flex: 1, backgroundColor: resetLoading ? '#2563EB' : '#3B82F6',
+                        color: '#fff', border: 'none', borderRadius: 8,
+                        padding: '9px 0', fontSize: 13, fontWeight: 600,
+                        cursor: resetLoading ? 'not-allowed' : 'pointer',
+                        opacity: resetLoading ? 0.7 : 1, transition: 'opacity 150ms',
+                      }}
+                    >
+                      {resetLoading ? 'Sending…' : 'Send Reset Link'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
