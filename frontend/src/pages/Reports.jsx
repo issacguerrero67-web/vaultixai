@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 const geistFontLink = document.createElement('link')
@@ -29,6 +29,8 @@ export default function Reports() {
   const [signingOut, setSigningOut] = useState(false)
   const [report, setReport] = useState(null)
   const [accountName, setAccountName] = useState('')
+  const [searchParams] = useSearchParams()
+  const paymentSuccess = searchParams.get('payment') === 'success'
 
   useEffect(() => {
     async function init() {
@@ -194,6 +196,21 @@ export default function Reports() {
         </div>
 
         <div style={{ padding: 32, flex: 1 }}>
+
+          {paymentSuccess && (
+            <div style={{
+              background: 'rgba(34,197,94,0.1)',
+              border: '1px solid rgba(34,197,94,0.3)',
+              borderRadius: 8,
+              padding: '16px 20px',
+              marginBottom: 24,
+              color: '#22C55E',
+              fontSize: 14,
+              fontWeight: 500,
+            }}>
+              🎉 Payment successful! Your Vaultix AI plan is now active.
+            </div>
+          )}
 
           {/* ── NO REPORTS ── */}
           {!report ? (
