@@ -30,6 +30,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [signingOut, setSigningOut] = useState(false)
   const [runningAudit, setRunningAudit] = useState(false)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -50,6 +51,12 @@ export default function Dashboard() {
 
   async function runAudit() {
     setRunningAudit(true)
+    setElapsedSeconds(0)
+
+    const timer = setInterval(() => {
+      setElapsedSeconds(prev => prev + 1)
+    }, 1000)
+
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/audit/run`, {
@@ -67,8 +74,10 @@ export default function Dashboard() {
       }
     } catch (err) {
       console.error('Audit error:', err)
+    } finally {
+      clearInterval(timer)
+      setRunningAudit(false)
     }
-    setRunningAudit(false)
   }
 
   if (loading) {
@@ -173,7 +182,7 @@ export default function Dashboard() {
           padding: '20px 32px',
           borderBottom: '1px solid #1E1E1C',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: runningAudit ? 'flex-start' : 'center',
           justifyContent: 'space-between',
         }}>
           <h1 style={{ fontSize: '18px', fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
@@ -214,6 +223,11 @@ export default function Dashboard() {
               {runningAudit ? 'Running…' : 'Run Audit'}
             </button>
           </div>
+          {runningAudit && (
+            <p style={{ color: '#6B7280', fontSize: '13px', margin: '8px 0 0' }}>
+              Analyzing your AWS account… {elapsedSeconds}s
+            </p>
+          )}
         </div>
 
         {/* Content */}
