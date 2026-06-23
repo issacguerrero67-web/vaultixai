@@ -50,9 +50,13 @@ export default function ConnectAWS() {
     setVerifyStatus(null)
     const roleArn = `arn:aws:iam::${accountId}:role/VaultixReadOnlyRole`
     try {
+      const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/aws/verify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
         body: JSON.stringify({ accountId, roleArn }),
       })
       if (res.ok) {
