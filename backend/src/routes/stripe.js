@@ -33,8 +33,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
       await supabase.from('profiles').upsert({
         id: userId,
         stripe_customer_id: session.customer,
-        tier,
-        subscription_status: 'active',
+        plan: tier, // profiles table uses 'plan', not 'tier'
       })
       console.log('Subscription activated for user:', userId)
     } catch (err) {
@@ -94,23 +93,29 @@ router.post('/create-checkout', async (req, res, next) => {
 })
 
 // GET /api/stripe/status
-router.get('/status', async (req, res, next) => {
+// profiles table has: plan (text), stripe_customer_id (text)
+// No subscription_status or tier columns yet — map plan → tier, derive status from stripe_customer_id
+router.get('/status', async (req, res) => {
   try {
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('tier, subscription_status, stripe_customer_id')
+      .select('*')
       .eq('id', req.user.id)
       .single()
 
-    if (error && error.code !== 'PGRST116') return next(error)
+    if (error && error.code !== 'PGRST116') {
+      console.error('Profile fetch error:', error)
+      return res.json({ tier: null, subscriptionStatus: null, stripeCustomerId: null })
+    }
 
-    res.json({
-      tier: profile?.tier ?? null,
-      subscriptionStatus: profile?.subscription_status ?? null,
-      stripeCustomerId: profile?.stripe_customer_id ?? null,
+    return res.json({
+      tier: profile?.tier || profile?.plan || null,
+      subscriptionStatus: profile?.subscription_status || (profile?.stripe_customer_id ? 'active' : null),
+      stripeCustomerId: profile?.stripe_customer_id || null,
     })
   } catch (err) {
-    next(err)
+    console.error('Stripe status error:', err.message)
+    return res.json({ tier: null, subscriptionStatus: null, stripeCustomerId: null })
   }
 })
 
