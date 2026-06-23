@@ -29,6 +29,7 @@ export default function Dashboard() {
   const [userEmail, setUserEmail] = useState('')
   const [loading, setLoading] = useState(true)
   const [signingOut, setSigningOut] = useState(false)
+  const [runningAudit, setRunningAudit] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -48,17 +49,26 @@ export default function Dashboard() {
   }
 
   async function runAudit() {
-    const { data: { session } } = await supabase.auth.getSession()
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/audit/run`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session?.access_token}`,
-      },
-    })
-    const data = await res.json()
-    console.log('Audit result:', JSON.stringify(data, null, 2))
-    alert(res.ok ? 'Audit ran! Check console.' : 'Error: ' + data.error)
+    setRunningAudit(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/audit/run`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+      })
+      const data = await res.json()
+      if (res.ok) {
+        navigate('/dashboard/reports')
+      } else {
+        console.error('Audit failed:', data.error)
+      }
+    } catch (err) {
+      console.error('Audit error:', err)
+    }
+    setRunningAudit(false)
   }
 
   if (loading) {
@@ -169,24 +179,41 @@ export default function Dashboard() {
           <h1 style={{ fontSize: '18px', fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
             Dashboard
           </h1>
-          <button
-            style={{
-              backgroundColor: '#3B82F6',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '8px 18px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'transform 150ms, box-shadow 150ms',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
-            onClick={runAudit}
-          >
-            Run Audit
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Link
+              to="/dashboard/reports"
+              style={{
+                color: '#888884', fontSize: '14px', fontWeight: 500,
+                textDecoration: 'none', padding: '8px 14px',
+                border: '1px solid #1E1E1C', borderRadius: '8px',
+                transition: 'color 150ms, border-color 150ms',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#F5F4F0'; e.currentTarget.style.borderColor = '#3B3B38' }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#888884'; e.currentTarget.style.borderColor = '#1E1E1C' }}
+            >
+              View Last Report
+            </Link>
+            <button
+              disabled={runningAudit}
+              style={{
+                backgroundColor: runningAudit ? '#2563EB' : '#3B82F6',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 18px',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: runningAudit ? 'not-allowed' : 'pointer',
+                opacity: runningAudit ? 0.7 : 1,
+                transition: 'transform 150ms, box-shadow 150ms',
+              }}
+              onMouseEnter={e => { if (!runningAudit) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' } }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
+              onClick={runAudit}
+            >
+              {runningAudit ? 'Running…' : 'Run Audit'}
+            </button>
+          </div>
         </div>
 
         {/* Content */}
