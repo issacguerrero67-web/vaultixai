@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { requireAuth } from '../middleware/auth.js'
 import { fetchAwsData } from '../services/awsFetcher.js'
 import { runAuditEngine } from '../services/auditEngine.js'
+import { sendAuditReport } from '../services/emailService.js'
 
 const router = Router()
 
@@ -58,6 +59,14 @@ router.post('/run', async (req, res, next) => {
       console.error('Failed to save audit report:', reportError.message)
       // Still return findings even if saving fails
       return res.json({ success: true, reportId: null, findings, totalSavings })
+    }
+
+    try {
+      await sendAuditReport(req.user.email, findings, totalSavings, account.account_name)
+      console.log('Audit report email sent to:', req.user.email)
+    } catch (emailErr) {
+      console.error('Failed to send audit email:', emailErr.message)
+      // Don't fail the request if email fails
     }
 
     res.json({ success: true, reportId: report.id, findings, totalSavings })
