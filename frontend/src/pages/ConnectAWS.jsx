@@ -21,6 +21,7 @@ export default function ConnectAWS() {
   const [copied, setCopied] = useState(false)
   const [verifying, setVerifying] = useState(false)
   const [verifyStatus, setVerifyStatus] = useState(null) // 'success' | 'error'
+  const [error, setError] = useState('')
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -29,13 +30,26 @@ export default function ConnectAWS() {
     })
   }, [navigate])
 
-  function handleAccountIdNext(e) {
+  async function handleAccountIdNext(e) {
     e.preventDefault()
     if (!/^\d{12}$/.test(accountId)) {
       setAccountIdError('AWS Account ID must be exactly 12 digits.')
       return
     }
     setAccountIdError('')
+    setError('')
+
+    const { data: { session } } = await supabase.auth.getSession()
+    const { data: existingAccounts } = await supabase
+      .from('aws_accounts')
+      .select('id, account_name, role_arn')
+      .eq('user_id', session.user.id)
+
+    if (existingAccounts && existingAccounts.length > 0) {
+      setError('You already have a connected AWS account. Go to your dashboard to run an audit or view your report.')
+      return
+    }
+
     setStep(2)
   }
 
@@ -204,6 +218,16 @@ export default function ConnectAWS() {
                   Next →
                 </button>
               </form>
+              {error && (
+                <div style={{
+                  marginTop: 16,
+                  backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
+                  borderRadius: 8, padding: '14px 16px',
+                  color: '#FCA5A5', fontSize: 14, lineHeight: 1.6,
+                }}>
+                  {error}
+                </div>
+              )}
             </div>
           )}
 

@@ -36,15 +36,23 @@ router.post('/verify', requireAuth, async (req, res, next) => {
 
     await client.send(command)
 
-    const { error } = await supabase.from('aws_accounts').insert({
-      user_id: req.user.id,
-      account_name: 'My AWS Account',
-      role_arn: roleArn,
-      external_id: randomUUID(),
-    })
+    const { data: existing } = await supabase
+      .from('aws_accounts')
+      .select('id')
+      .eq('user_id', req.user.id)
+      .eq('role_arn', roleArn)
+      .limit(1)
 
-    if (error) {
-      console.error('aws_accounts insert failed:', error.message)
+    if (!existing || existing.length === 0) {
+      const { error } = await supabase.from('aws_accounts').insert({
+        user_id: req.user.id,
+        account_name: 'My AWS Account',
+        role_arn: roleArn,
+        external_id: randomUUID(),
+      })
+      if (error) {
+        console.error('aws_accounts insert failed:', error.message)
+      }
     }
 
     res.json({ success: true, message: 'Role verified successfully.' })
