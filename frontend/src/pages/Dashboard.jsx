@@ -32,16 +32,24 @@ export default function Dashboard() {
   const [signingOut, setSigningOut] = useState(false)
   const [runningAudit, setRunningAudit] = useState(false)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [auditError, setAuditError] = useState('')
+  const [awsConnected, setAwsConnected] = useState(null) // null = loading, true/false
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        navigate('/login')
-      } else {
-        setUserEmail(session.user.email)
-        setLoading(false)
-      }
-    })
+    async function init() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { navigate('/login'); return }
+      setUserEmail(session.user.email)
+
+      const { data: accounts } = await supabase
+        .from('aws_accounts')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .limit(1)
+      setAwsConnected(!!(accounts && accounts.length > 0))
+      setLoading(false)
+    }
+    init()
   }, [navigate])
 
   async function handleSignOut() {
@@ -51,15 +59,29 @@ export default function Dashboard() {
   }
 
   async function runAudit() {
+    setAuditError('')
     setRunningAudit(true)
     setElapsedSeconds(0)
+
+    const { data: { session } } = await supabase.auth.getSession()
+
+    const { data: accounts } = await supabase
+      .from('aws_accounts')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .limit(1)
+
+    if (!accounts || accounts.length === 0) {
+      setAuditError('No AWS account connected. Connect your AWS account first.')
+      setRunningAudit(false)
+      return
+    }
 
     const timer = setInterval(() => {
       setElapsedSeconds(prev => prev + 1)
     }, 1000)
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/audit/run`, {
         method: 'POST',
         headers: {
@@ -227,6 +249,24 @@ export default function Dashboard() {
           {runningAudit && (
             <p style={{ color: '#6B7280', fontSize: '13px', margin: '8px 0 0' }}>
               Analyzing your AWS account… {elapsedSeconds}s
+            </p>
+          )}
+          {auditError && !runningAudit && (
+            <p style={{ color: '#EF4444', fontSize: '13px', margin: '8px 0 0' }}>
+              {auditError}{' '}
+              <a href="/dashboard/connect" style={{ color: '#3B82F6' }}>Connect AWS →</a>
+            </p>
+          )}
+        </div>
+        {/* AWS connection status bar */}
+        <div style={{ padding: '6px 32px', borderBottom: '1px solid #1E1E1C', backgroundColor: '#0D0D0D' }}>
+          {awsConnected === true && (
+            <p style={{ margin: 0, fontSize: 12, color: '#34D399' }}>✓ AWS account connected</p>
+          )}
+          {awsConnected === false && (
+            <p style={{ margin: 0, fontSize: 12, color: '#666662' }}>
+              No AWS account connected —{' '}
+              <Link to="/dashboard/connect" style={{ color: '#3B82F6', textDecoration: 'none' }}>Connect AWS →</Link>
             </p>
           )}
         </div>
