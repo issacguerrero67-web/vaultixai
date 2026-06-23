@@ -22,26 +22,23 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET)
   } catch (err) {
     console.error('Webhook signature verification failed:', err.message)
-    return res.status(400).json({ error: 'Invalid webhook signature.' })
+    return res.status(400).send(`Webhook Error: ${err.message}`)
   }
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object
     const { userId, tier, savingsAmount } = session.metadata
 
-    const { error } = await supabase
-      .from('profiles')
-      .upsert({
+    try {
+      await supabase.from('profiles').upsert({
         id: userId,
         stripe_customer_id: session.customer,
         tier,
         subscription_status: 'active',
       })
-
-    if (error) {
-      console.error('Failed to update profile after checkout:', error.message)
-    } else {
-      console.log(`Subscription activated: user=${userId} tier=${tier} savings=$${savingsAmount}/mo`)
+      console.log('Subscription activated for user:', userId)
+    } catch (err) {
+      console.error('Failed to update profile after payment:', err.message)
     }
   }
 

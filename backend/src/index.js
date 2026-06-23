@@ -13,7 +13,13 @@ const app = express()
 const PORT = process.env.PORT || 3001
 
 app.use(cors())
-app.use(express.json())
+app.use((req, res, next) => {
+  if (req.originalUrl === '/api/stripe/webhook') {
+    next()
+  } else {
+    express.json()(req, res, next)
+  }
+})
 
 app.use('/health', healthRouter)
 app.use('/api/audit', auditRouter)
