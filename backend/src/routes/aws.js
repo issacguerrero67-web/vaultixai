@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts'
 import { createClient } from '@supabase/supabase-js'
+import { randomUUID } from 'crypto'
 import { requireAuth } from '../middleware/auth.js'
 
 const router = Router()
@@ -43,6 +44,7 @@ router.post('/verify', requireAuth, async (req, res, next) => {
       user_id: req.user.id,
       account_name: 'My AWS Account',
       role_arn: roleArn,
+      external_id: randomUUID(),
     })
 
     console.log('Supabase insert data:', JSON.stringify(data))
