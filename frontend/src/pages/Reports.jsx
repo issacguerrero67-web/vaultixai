@@ -267,6 +267,44 @@ export default function Reports() {
                   <FindingCard key={finding.id} finding={finding} />
                 ))}
               </div>
+
+              {/* ── CONTACT CTA ── */}
+              <div style={{
+                marginTop: 48,
+                padding: 32,
+                background: 'rgba(59,130,246,0.08)',
+                border: '1px solid rgba(59,130,246,0.3)',
+                borderRadius: 12,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: 16,
+              }}>
+                <div>
+                  <h3 style={{ color: '#F5F4F0', fontSize: 18, fontWeight: 600, margin: '0 0 8px 0' }}>
+                    Want us to implement these fixes for you?
+                  </h3>
+                  <p style={{ color: '#9CA3AF', fontSize: 14, margin: 0 }}>
+                    Our team can handle the remediation — you only pay a percentage of what we save you.
+                  </p>
+                </div>
+                <a
+                  href="mailto:issacguerrero67@gmail.com?subject=Vaultix AI - Implementation Help&body=Hi, I'd like help implementing the cost optimization findings from my Vaultix AI audit."
+                  style={{
+                    background: '#3B82F6',
+                    color: '#fff',
+                    padding: '12px 24px',
+                    borderRadius: 8,
+                    textDecoration: 'none',
+                    fontWeight: 600,
+                    fontSize: 14,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Talk to an Expert →
+                </a>
+              </div>
             </>
           )}
         </div>
