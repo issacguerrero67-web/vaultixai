@@ -8,6 +8,7 @@ import awsAccountRouter from './routes/awsAccounts.js'
 import awsRoutes from './routes/aws.js'
 import reportsRouter from './routes/reports.js'
 import stripeRouter from './routes/stripe.js'
+import { startCronJobs } from './services/cronJobs.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -36,4 +37,5 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`CloudCost AI backend running on port ${PORT}`)
+  startCronJobs()
 })
