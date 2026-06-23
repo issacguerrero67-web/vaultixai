@@ -34,6 +34,10 @@ export default function Dashboard() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [auditError, setAuditError] = useState('')
   const [awsConnected, setAwsConnected] = useState(null) // null = loading, true/false
+  const [reportCount, setReportCount] = useState(0)
+  const [showWelcome, setShowWelcome] = useState(
+    () => localStorage.getItem('vaultix_welcome_dismissed') !== 'true'
+  )
 
   useEffect(() => {
     async function init() {
@@ -41,16 +45,21 @@ export default function Dashboard() {
       if (!session) { navigate('/login'); return }
       setUserEmail(session.user.email)
 
-      const { data: accounts } = await supabase
-        .from('aws_accounts')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .limit(1)
-      setAwsConnected(!!(accounts && accounts.length > 0))
+      const [accountsRes, reportsRes] = await Promise.all([
+        supabase.from('aws_accounts').select('id').eq('user_id', session.user.id).limit(1),
+        supabase.from('audit_reports').select('id', { count: 'exact', head: true }).eq('user_id', session.user.id),
+      ])
+      setAwsConnected(!!(accountsRes.data && accountsRes.data.length > 0))
+      setReportCount(reportsRes.count ?? 0)
       setLoading(false)
     }
     init()
   }, [navigate])
+
+  function dismissWelcome() {
+    localStorage.setItem('vaultix_welcome_dismissed', 'true')
+    setShowWelcome(false)
+  }
 
   async function handleSignOut() {
     setSigningOut(true)
@@ -226,7 +235,8 @@ export default function Dashboard() {
               View Last Report
             </Link>
             <button
-              disabled={runningAudit}
+              disabled={runningAudit || awsConnected === false}
+              title={awsConnected === false ? 'Connect an AWS account first' : undefined}
               style={{
                 backgroundColor: runningAudit ? '#2563EB' : '#3B82F6',
                 color: '#fff',
@@ -235,11 +245,11 @@ export default function Dashboard() {
                 padding: '8px 18px',
                 fontSize: '14px',
                 fontWeight: 600,
-                cursor: runningAudit ? 'not-allowed' : 'pointer',
-                opacity: runningAudit ? 0.7 : 1,
+                cursor: (runningAudit || awsConnected === false) ? 'not-allowed' : 'pointer',
+                opacity: runningAudit ? 0.7 : awsConnected === false ? 0.4 : 1,
                 transition: 'transform 150ms, box-shadow 150ms',
               }}
-              onMouseEnter={e => { if (!runningAudit) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' } }}
+              onMouseEnter={e => { if (!runningAudit && awsConnected !== false) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' } }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
               onClick={runAudit}
             >
@@ -273,6 +283,57 @@ export default function Dashboard() {
 
         {/* Content */}
         <div style={{ padding: '32px', flex: 1 }}>
+
+          {/* Welcome banner — shown only for new users with no accounts and no reports */}
+          {showWelcome && awsConnected === false && reportCount === 0 && (
+            <div style={{
+              background: '#1a1a18',
+              border: '1px solid #2a2a28',
+              borderRadius: '8px',
+              padding: '24px 28px',
+              marginBottom: '24px',
+            }}>
+              <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: '#3B82F6', textTransform: 'uppercase', marginBottom: 8, margin: '0 0 8px' }}>
+                GETTING STARTED
+              </p>
+              <p style={{ fontSize: 18, fontWeight: 600, color: '#F5F4F0', marginBottom: 20, margin: '0 0 20px' }}>
+                You're 3 steps away from finding your AWS waste.
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                {['1 — Connect AWS', '2 — Run Audit', '3 — View Report'].map((step, i) => (
+                  <>
+                    <span key={step} style={{ background: '#2a2a28', borderRadius: 20, padding: '6px 14px', fontSize: 13, color: '#9ca3af' }}>
+                      {step}
+                    </span>
+                    {i < 2 && <span key={`arrow-${i}`} style={{ color: '#444', fontSize: 14 }}>→</span>}
+                  </>
+                ))}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <Link
+                  to="/dashboard/connect"
+                  style={{
+                    backgroundColor: '#3B82F6',
+                    color: '#fff',
+                    textDecoration: 'none',
+                    borderRadius: '8px',
+                    padding: '9px 18px',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    display: 'inline-block',
+                  }}
+                >
+                  Connect your AWS Account →
+                </Link>
+                <button
+                  onClick={dismissWelcome}
+                  style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: 13, cursor: 'pointer', marginLeft: 16 }}
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Stat cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
