@@ -1,13 +1,20 @@
 import { Router } from 'express'
 import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts'
+import { createClient } from '@supabase/supabase-js'
 import { requireAuth } from '../middleware/auth.js'
 
 const router = Router()
 
 const client = new STSClient({ region: process.env.AWS_REGION || 'us-east-1' })
 
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+)
+
 // POST /api/aws/verify
-// Verifies a customer's IAM role is assumable by attempting STS AssumeRole.
+// Verifies a customer's IAM role is assumable by attempting STS AssumeRole,
+// then persists the account using the service role key.
 router.post('/verify', requireAuth, async (req, res, next) => {
   try {
     const { accountId, roleArn } = req.body
@@ -27,6 +34,13 @@ router.post('/verify', requireAuth, async (req, res, next) => {
     })
 
     await client.send(command)
+
+    // Persist account — upsert so re-connecting the same role is idempotent
+    await supabase.from('aws_accounts').upsert({
+      user_id: req.user.id,
+      account_name: 'My AWS Account',
+      role_arn: roleArn,
+    }, { onConflict: 'role_arn', ignoreDuplicates: true })
 
     res.json({ success: true, message: 'Role verified successfully.' })
   } catch (err) {

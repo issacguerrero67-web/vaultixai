@@ -60,12 +60,6 @@ export default function ConnectAWS() {
         body: JSON.stringify({ accountId, roleArn }),
       })
       if (res.ok) {
-        // Save account to Supabase — ignore duplicate errors so we don't block the user
-        await supabase.from('aws_accounts').insert({
-          user_id: session?.user?.id,
-          account_name: 'My AWS Account',
-          role_arn: roleArn,
-        })
         setVerifyStatus('success')
       } else {
         setVerifyStatus('error')
