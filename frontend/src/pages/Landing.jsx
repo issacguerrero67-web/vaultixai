@@ -135,7 +135,7 @@ export default function Landing() {
             you <span style={{ color: '#3B82F6' }}>forgot exist.</span>
           </h1>
           <p style={{ fontSize: '1.05rem', color: 'rgba(245,244,240,0.5)', lineHeight: 1.75, maxWidth: 460, marginBottom: '2.25rem' }}>
-            Vaultix AI connects to your AWS account, scans every resource for waste, and delivers a prioritized fix list with specific resource IDs and exact dollar amounts.
+            Connect your AWS account in 5 minutes. We find the waste. You only pay when you save.
           </p>
           <div className="hero-buttons" style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
             <a href="#waitlist" className="hero-btn" style={{
@@ -258,75 +258,86 @@ export default function Landing() {
         <div className="fade-up">
           <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#555552', marginBottom: '1rem' }}>Pricing</p>
           <h2 style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: '1rem', color: '#F5F4F0' }}>
-            Simple pricing.<br />Real savings.
+            You pay nothing<br />until we save you money.
           </h2>
           <p style={{ fontSize: '0.95rem', color: '#888884', lineHeight: 1.75, maxWidth: 500, marginBottom: '3rem' }}>
-            Start your 14-day trial today. Credit card required — cancel before day 14 and pay nothing.
+            Our fee is a percentage of verified savings — if we don't find savings, you don't pay.
           </p>
         </div>
-        <div className="pricing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', marginBottom: '1.5rem' }}>
-          {/* PRO */}
-          <div className="fade-up" style={{ background: '#111110', border: '1px solid #222220', borderRadius: 10, padding: '2rem', transition: 'border-color 200ms' }}
+        <div className="pricing-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+
+          {/* STANDARD */}
+          <div className="fade-up" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #222220', borderRadius: 12, padding: '32px', display: 'flex', flexDirection: 'column', transition: 'border-color 200ms' }}
             onMouseEnter={e => e.currentTarget.style.borderColor = '#333330'}
             onMouseLeave={e => e.currentTarget.style.borderColor = '#222220'}>
-            <p style={{ fontSize: 11, fontWeight: 600, color: '#555552', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1.25rem' }}>Pro</p>
-            <p style={{ fontSize: '2.75rem', fontWeight: 700, letterSpacing: '-0.02em', color: '#F5F4F0', marginBottom: 2 }}>$49<span style={{ fontSize: '1rem', fontWeight: 400, color: '#555552' }}>/mo</span></p>
-            <p style={{ fontSize: 12, color: '#555552', marginBottom: '1.5rem' }}>Up to 3 AWS accounts</p>
-            <ul style={{ listStyle: 'none', marginBottom: '2rem', borderTop: '1px solid #1E1E1C', paddingTop: '1.25rem', padding: 0, paddingTop: '1.25rem' }}>
-              {['Full audit report with all findings', 'Specific resource IDs and savings', '90-day prioritized action plan', 'Email alerts for new waste', 'Terraform modules included'].map((f, i) => (
-                <li key={i} style={{ fontSize: 13, color: '#888884', padding: '7px 0', borderBottom: '1px solid #1A1A18', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ color: '#3B82F6', fontSize: 14 }}>✓</span>{f}
+            <p style={{ fontSize: 11, fontWeight: 600, color: '#555552', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Standard</p>
+            <p style={{ fontSize: 13, color: '#666662', marginBottom: '1.5rem' }}>For startups and small teams</p>
+            <p style={{ fontSize: '2.5rem', fontWeight: 700, letterSpacing: '-0.03em', color: '#F5F4F0', marginBottom: 4, lineHeight: 1 }}>20%</p>
+            <p style={{ fontSize: 12, color: '#888884', marginBottom: '0.5rem' }}>of verified savings</p>
+            <p style={{ fontSize: 12, color: '#555552', marginBottom: '1.75rem' }}>You pay nothing until we save you money</p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem', borderTop: '1px solid #1E1E1C', paddingTop: '1.25rem', flex: 1 }}>
+              {['Up to 3 AWS accounts', 'Full AI cost audit', 'Monthly re-scans', 'Email findings report', '30-day savings verification'].map((f, i) => (
+                <li key={i} style={{ fontSize: 13, color: '#888884', padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ color: '#3B82F6', fontSize: 14, flexShrink: 0 }}>✓</span>{f}
                 </li>
               ))}
             </ul>
-            <a href="#waitlist" style={{ display: 'block', width: '100%', boxSizing: 'border-box', padding: 11, borderRadius: 7, fontSize: 14, fontWeight: 500, textAlign: 'center', background: 'transparent', color: '#F5F4F0', border: '1px solid #2A2A28', textDecoration: 'none', transition: 'all 150ms' }}
+            <a href="#waitlist" style={{ display: 'block', boxSizing: 'border-box', padding: '11px 0', borderRadius: 7, fontSize: 14, fontWeight: 500, textAlign: 'center', background: 'transparent', color: '#F5F4F0', border: '1px solid #2A2A28', textDecoration: 'none', transition: 'all 150ms' }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = '#3A3A38'; e.currentTarget.style.background = '#161614' }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = '#2A2A28'; e.currentTarget.style.background = 'transparent' }}>
               Join Waitlist
             </a>
           </div>
+
           {/* TEAM */}
-          <div className="fade-up" style={{ background: '#050E1A', border: '2px solid #3B82F6', borderRadius: 10, padding: '2rem', position: 'relative', transition: 'border-color 200ms' }}
+          <div className="fade-up" style={{ background: 'rgba(255,255,255,0.03)', border: '2px solid #3B82F6', borderRadius: 12, padding: '32px', position: 'relative', display: 'flex', flexDirection: 'column', transition: 'border-color 200ms' }}
             onMouseEnter={e => e.currentTarget.style.borderColor = '#60A5FA'}
             onMouseLeave={e => e.currentTarget.style.borderColor = '#3B82F6'}>
             <div style={{ position: 'absolute', top: -1, right: '1.5rem', background: '#3B82F6', color: '#fff', fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', padding: '4px 12px', borderRadius: '0 0 6px 6px', textTransform: 'uppercase' }}>
               Most Popular
             </div>
-            <p style={{ fontSize: 11, fontWeight: 600, color: '#555552', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1.25rem' }}>Team</p>
-            <p style={{ fontSize: '2.75rem', fontWeight: 700, letterSpacing: '-0.02em', color: '#F5F4F0', marginBottom: 2 }}>$99<span style={{ fontSize: '1rem', fontWeight: 400, color: '#555552' }}>/mo</span></p>
-            <p style={{ fontSize: 12, color: '#555552', marginBottom: '1.5rem' }}>Unlimited AWS accounts</p>
-            <ul style={{ listStyle: 'none', marginBottom: '2rem', borderTop: '1px solid #1E1E1C', paddingTop: '1.25rem', padding: 0, paddingTop: '1.25rem' }}>
-              {['Everything in Pro', 'Unlimited AWS accounts', 'Slack integration for alerts', 'Multi-user team access', 'Priority support', 'Quarterly business review'].map((f, i) => (
-                <li key={i} style={{ fontSize: 13, color: '#888884', padding: '7px 0', borderBottom: '1px solid #1A1A18', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ color: '#3B82F6', fontSize: 14 }}>✓</span>{f}
+            <p style={{ fontSize: 11, fontWeight: 600, color: '#555552', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Team</p>
+            <p style={{ fontSize: 13, color: '#666662', marginBottom: '1.5rem' }}>For growing engineering teams</p>
+            <p style={{ fontSize: '2.5rem', fontWeight: 700, letterSpacing: '-0.03em', color: '#F5F4F0', marginBottom: 4, lineHeight: 1 }}>15%</p>
+            <p style={{ fontSize: 12, color: '#888884', marginBottom: '0.5rem' }}>of verified savings</p>
+            <p style={{ fontSize: 12, color: '#555552', marginBottom: '1.75rem' }}>Volume discount for larger savings</p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem', borderTop: '1px solid #1E1E1C', paddingTop: '1.25rem', flex: 1 }}>
+              {['Unlimited AWS accounts', 'Everything in Standard', 'Slack alerts', 'Priority support', 'Quarterly business review'].map((f, i) => (
+                <li key={i} style={{ fontSize: 13, color: '#888884', padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ color: '#3B82F6', fontSize: 14, flexShrink: 0 }}>✓</span>{f}
                 </li>
               ))}
             </ul>
-            <a href="#waitlist" style={{ display: 'block', width: '100%', boxSizing: 'border-box', padding: 11, borderRadius: 7, fontSize: 14, fontWeight: 500, textAlign: 'center', background: '#3B82F6', color: '#fff', border: 'none', textDecoration: 'none', transition: 'background 150ms' }}
+            <a href="#waitlist" style={{ display: 'block', boxSizing: 'border-box', padding: '11px 0', borderRadius: 7, fontSize: 14, fontWeight: 500, textAlign: 'center', background: '#3B82F6', color: '#fff', border: 'none', textDecoration: 'none', transition: 'background 150ms' }}
               onMouseEnter={e => e.currentTarget.style.background = '#2563EB'}
               onMouseLeave={e => e.currentTarget.style.background = '#3B82F6'}>
               Join Waitlist
             </a>
           </div>
-        </div>
 
-        {/* MANUAL AUDIT */}
-        <div className="fade-up manual-audit" style={{ background: '#111110', border: '1px solid #1E1E1C', borderRadius: 10, padding: '2rem 2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '2rem', flexWrap: 'wrap' }}>
-          <div>
-            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#F5F4F0', marginBottom: 6 }}>
-              Prefer it done for you? <span style={{ color: '#F5F4F0', fontWeight: 600 }}>Manual Audit — $300 flat.</span>
-            </h3>
-            <p style={{ fontSize: 13, color: '#666662', lineHeight: 1.65, maxWidth: 480 }}>
-              A real AWS infrastructure engineer runs your audit and delivers a full findings report in 48 hours.
-            </p>
+          {/* ENTERPRISE */}
+          <div className="fade-up" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid #222220', borderRadius: 12, padding: '32px', display: 'flex', flexDirection: 'column', transition: 'border-color 200ms' }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = '#333330'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = '#222220'}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: '#555552', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Enterprise</p>
+            <p style={{ fontSize: 13, color: '#666662', marginBottom: '1.5rem' }}>For large orgs and agencies</p>
+            <p style={{ fontSize: '2.5rem', fontWeight: 700, letterSpacing: '-0.03em', color: '#F5F4F0', marginBottom: 4, lineHeight: 1 }}>Custom</p>
+            <p style={{ fontSize: 12, color: '#888884', marginBottom: '0.5rem' }}>&nbsp;</p>
+            <p style={{ fontSize: 12, color: '#555552', marginBottom: '1.75rem' }}>Negotiated rate based on portfolio size</p>
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem', borderTop: '1px solid #1E1E1C', paddingTop: '1.25rem', flex: 1 }}>
+              {['Unlimited accounts', 'White-glove onboarding', 'Dedicated account manager', 'Custom reporting', 'SLA guarantee', 'SSO + audit logs'].map((f, i) => (
+                <li key={i} style={{ fontSize: 13, color: '#888884', padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ color: '#3B82F6', fontSize: 14, flexShrink: 0 }}>✓</span>{f}
+                </li>
+              ))}
+            </ul>
+            <a href="#waitlist" style={{ display: 'block', boxSizing: 'border-box', padding: '11px 0', borderRadius: 7, fontSize: 14, fontWeight: 500, textAlign: 'center', background: 'transparent', color: '#F5F4F0', border: '1px solid #2A2A28', textDecoration: 'none', transition: 'all 150ms' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#3A3A38'; e.currentTarget.style.background = '#161614' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#2A2A28'; e.currentTarget.style.background = 'transparent' }}>
+              Contact Us
+            </a>
           </div>
-          <a href="https://calendly.com/issacguerrero67/aws-audit-call" target="_blank" rel="noreferrer"
-            className="manual-audit-btn"
-            style={{ background: 'transparent', color: '#F5F4F0', border: '1px solid #2A2A28', padding: '10px 20px', borderRadius: 7, fontSize: 13, fontWeight: 500, textDecoration: 'none', whiteSpace: 'nowrap', transition: 'all 150ms' }}
-            onMouseEnter={e => { e.target.style.borderColor = '#3A3A38'; e.target.style.background = '#161614' }}
-            onMouseLeave={e => { e.target.style.borderColor = '#2A2A28'; e.target.style.background = 'transparent' }}>
-            Book Your Audit →
-          </a>
+
         </div>
       </section>
 
