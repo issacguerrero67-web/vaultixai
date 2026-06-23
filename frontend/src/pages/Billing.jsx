@@ -77,7 +77,7 @@ export default function Billing() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ savingsAmount, tier }),
+        body: JSON.stringify({ savingsAmount: effectiveSavings, tier }),
       })
       const data = await res.json()
       if (data.url) {
@@ -102,6 +102,8 @@ export default function Billing() {
   }
 
   const isActive = status?.subscriptionStatus === 'active'
+  const hasAudit = reportDate !== null
+  const effectiveSavings = hasAudit && savingsAmount === 0 ? 10 : savingsAmount
 
   return (
     <div style={{
@@ -214,15 +216,23 @@ export default function Billing() {
                 </p>
               </div>
 
-              {savingsAmount > 0 ? (
+              {!hasAudit ? (
+                <div style={{
+                  background: 'rgba(245,158,11,0.08)',
+                  border: '1px solid rgba(245,158,11,0.2)',
+                  borderRadius: 8, padding: '16px 20px', marginBottom: 24,
+                  fontSize: 14, color: '#9CA3AF',
+                }}>
+                  ⚠️ No audit found.{' '}
+                  <a href="/dashboard" style={{ color: '#3B82F6' }}>Run an audit first</a>
+                  {' '}to see your potential savings before choosing a plan.
+                </div>
+              ) : savingsAmount > 0 ? (
                 <div style={{
                   background: 'rgba(59,130,246,0.08)',
                   border: '1px solid rgba(59,130,246,0.2)',
-                  borderRadius: 8,
-                  padding: '16px 20px',
-                  marginBottom: 24,
-                  fontSize: 14,
-                  color: '#9CA3AF',
+                  borderRadius: 8, padding: '16px 20px', marginBottom: 24,
+                  fontSize: 14, color: '#9CA3AF',
                 }}>
                   Based on your last audit ({reportDate}), we identified{' '}
                   <span style={{ color: '#22C55E', fontWeight: 600 }}>
@@ -232,17 +242,12 @@ export default function Billing() {
                 </div>
               ) : (
                 <div style={{
-                  background: 'rgba(245,158,11,0.08)',
-                  border: '1px solid rgba(245,158,11,0.2)',
-                  borderRadius: 8,
-                  padding: '16px 20px',
-                  marginBottom: 24,
-                  fontSize: 14,
-                  color: '#9CA3AF',
+                  background: 'rgba(59,130,246,0.08)',
+                  border: '1px solid rgba(59,130,246,0.2)',
+                  borderRadius: 8, padding: '16px 20px', marginBottom: 24,
+                  fontSize: 14, color: '#9CA3AF',
                 }}>
-                  ⚠️ No audit found.{' '}
-                  <a href="/dashboard" style={{ color: '#3B82F6' }}>Run an audit first</a>
-                  {' '}to see your potential savings before choosing a plan.
+                  No savings identified yet. Plans start when we find savings.
                 </div>
               )}
 
@@ -277,20 +282,20 @@ export default function Billing() {
                   </div>
                   <button
                     onClick={() => startCheckout('standard')}
-                    disabled={!!checkoutLoading || savingsAmount === 0}
+                    disabled={!!checkoutLoading || !hasAudit}
                     style={{
                       backgroundColor: checkoutLoading === 'standard' ? '#2563EB' : '#3B82F6',
                       color: '#fff', border: 'none', borderRadius: 8,
                       padding: '10px 22px', fontSize: 14, fontWeight: 600,
-                      cursor: (checkoutLoading || savingsAmount === 0) ? 'not-allowed' : 'pointer',
-                      opacity: (checkoutLoading && checkoutLoading !== 'standard') || savingsAmount === 0 ? 0.4 : 1,
+                      cursor: (checkoutLoading || !hasAudit) ? 'not-allowed' : 'pointer',
+                      opacity: (checkoutLoading && checkoutLoading !== 'standard') || !hasAudit ? 0.4 : 1,
                       whiteSpace: 'nowrap', flexShrink: 0,
                       transition: 'transform 150ms, box-shadow 150ms',
                     }}
-                    onMouseEnter={e => { if (!checkoutLoading && savingsAmount > 0) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' } }}
+                    onMouseEnter={e => { if (!checkoutLoading && hasAudit) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' } }}
                     onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
                   >
-                    {checkoutLoading === 'standard' ? 'Redirecting…' : savingsAmount === 0 ? 'Run an audit first' : 'Start Standard Plan (20% of savings)'}
+                    {checkoutLoading === 'standard' ? 'Redirecting…' : !hasAudit ? 'Run an audit first' : 'Start Standard Plan (20% of savings)'}
                   </button>
                 </div>
 
@@ -331,20 +336,20 @@ export default function Billing() {
                   </div>
                   <button
                     onClick={() => startCheckout('team')}
-                    disabled={!!checkoutLoading || savingsAmount === 0}
+                    disabled={!!checkoutLoading || !hasAudit}
                     style={{
                       backgroundColor: checkoutLoading === 'team' ? '#2563EB' : '#3B82F6',
                       color: '#fff', border: 'none', borderRadius: 8,
                       padding: '10px 22px', fontSize: 14, fontWeight: 600,
-                      cursor: (checkoutLoading || savingsAmount === 0) ? 'not-allowed' : 'pointer',
-                      opacity: (checkoutLoading && checkoutLoading !== 'team') || savingsAmount === 0 ? 0.4 : 1,
+                      cursor: (checkoutLoading || !hasAudit) ? 'not-allowed' : 'pointer',
+                      opacity: (checkoutLoading && checkoutLoading !== 'team') || !hasAudit ? 0.4 : 1,
                       whiteSpace: 'nowrap', flexShrink: 0,
                       transition: 'transform 150ms, box-shadow 150ms',
                     }}
-                    onMouseEnter={e => { if (!checkoutLoading && savingsAmount > 0) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' } }}
+                    onMouseEnter={e => { if (!checkoutLoading && hasAudit) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' } }}
                     onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
                   >
-                    {checkoutLoading === 'team' ? 'Redirecting…' : savingsAmount === 0 ? 'Run an audit first' : 'Start Team Plan (15% of savings)'}
+                    {checkoutLoading === 'team' ? 'Redirecting…' : !hasAudit ? 'Run an audit first' : 'Start Team Plan (15% of savings)'}
                   </button>
                 </div>
 
