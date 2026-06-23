@@ -5,6 +5,7 @@ import cors from 'cors'
 import healthRouter from './routes/health.js'
 import auditRouter from './routes/audit.js'
 import awsAccountRouter from './routes/awsAccounts.js'
+import awsRoutes from './routes/aws.js'
 import reportsRouter from './routes/reports.js'
 import stripeRouter from './routes/stripe.js'
 
@@ -17,6 +18,7 @@ app.use(express.json())
 app.use('/health', healthRouter)
 app.use('/api/audit', auditRouter)
 app.use('/api/aws-accounts', awsAccountRouter)
+app.use('/api/aws', awsRoutes)
 app.use('/api/reports', reportsRouter)
 app.use('/api/stripe', stripeRouter)
 
