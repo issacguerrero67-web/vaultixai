@@ -39,11 +39,11 @@ router.post('/verify', requireAuth, async (req, res, next) => {
     console.log('user_id:', req.user.id)
     console.log('role_arn:', roleArn)
 
-    const { data, error } = await supabase.from('aws_accounts').upsert({
+    const { data, error } = await supabase.from('aws_accounts').insert({
       user_id: req.user.id,
       account_name: 'My AWS Account',
       role_arn: roleArn,
-    }, { onConflict: 'role_arn', ignoreDuplicates: true })
+    })
 
     console.log('Supabase insert data:', JSON.stringify(data))
     console.log('Supabase insert error:', JSON.stringify(error))
