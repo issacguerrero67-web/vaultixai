@@ -100,15 +100,26 @@ export default function Landing() {
             onMouseEnter={e => e.target.style.color = '#F5F4F0'}
             onMouseLeave={e => e.target.style.color = '#888884'}>Pricing</a>
         </div>
-        <a href="#waitlist" style={{
-          background: '#3B82F6', color: '#fff', padding: '8px 18px',
-          borderRadius: 6, fontSize: 13, fontWeight: 500, textDecoration: 'none',
-          transition: 'background 150ms'
-        }}
-          onMouseEnter={e => e.target.style.background = '#2563EB'}
-          onMouseLeave={e => e.target.style.background = '#3B82F6'}>
-          Join Waitlist
-        </a>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <Link to="/login" style={{
+            color: '#F5F4F0', padding: '8px 16px',
+            borderRadius: 6, fontSize: 13, fontWeight: 500, textDecoration: 'none',
+            border: '1px solid rgba(255,255,255,0.15)', transition: 'border-color 150ms',
+          }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.35)'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'}>
+            Log In
+          </Link>
+          <Link to="/signup" style={{
+            background: '#3B82F6', color: '#fff', padding: '8px 16px',
+            borderRadius: 6, fontSize: 13, fontWeight: 600, textDecoration: 'none',
+            transition: 'background 150ms',
+          }}
+            onMouseEnter={e => e.currentTarget.style.background = '#2563EB'}
+            onMouseLeave={e => e.currentTarget.style.background = '#3B82F6'}>
+            Get Started
+          </Link>
+        </div>
       </nav>
 
       {/* HERO */}
@@ -138,15 +149,15 @@ export default function Landing() {
             Connect your AWS account in 5 minutes. We find the waste. You only pay when you save.
           </p>
           <div className="hero-buttons" style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
-            <a href="#waitlist" className="hero-btn" style={{
+            <Link to="/signup" className="hero-btn" style={{
               background: '#F5F4F0', color: '#111110', padding: '11px 24px',
               borderRadius: 7, fontSize: 14, fontWeight: 600, textDecoration: 'none',
               transition: 'all 150ms', display: 'inline-block'
             }}
-              onMouseEnter={e => { e.target.style.background = '#E5E4E0'; e.target.style.transform = 'translateY(-1px)' }}
-              onMouseLeave={e => { e.target.style.background = '#F5F4F0'; e.target.style.transform = 'translateY(0)' }}>
-              Join Waitlist
-            </a>
+              onMouseEnter={e => { e.currentTarget.style.background = '#E5E4E0'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#F5F4F0'; e.currentTarget.style.transform = 'translateY(0)' }}>
+              Get Started Free
+            </Link>
             <a href="#process" className="hero-btn" style={{
               background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)',
               padding: '11px 24px', borderRadius: 7, fontSize: 14,
@@ -158,7 +169,7 @@ export default function Landing() {
             </a>
           </div>
           <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>
-            14-day trial · Credit card required · Cancel anytime · Read-only AWS access
+            No upfront cost · Read-only AWS access · You only pay when we save you money
           </p>
         </div>
       </section>
@@ -282,11 +293,11 @@ export default function Landing() {
                 </li>
               ))}
             </ul>
-            <a href="#waitlist" style={{ display: 'block', boxSizing: 'border-box', padding: '11px 0', borderRadius: 7, fontSize: 14, fontWeight: 500, textAlign: 'center', background: 'transparent', color: '#F5F4F0', border: '1px solid #2A2A28', textDecoration: 'none', transition: 'all 150ms' }}
+            <Link to="/signup" style={{ display: 'block', boxSizing: 'border-box', padding: '11px 0', borderRadius: 7, fontSize: 14, fontWeight: 500, textAlign: 'center', background: 'transparent', color: '#F5F4F0', border: '1px solid #2A2A28', textDecoration: 'none', transition: 'all 150ms' }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = '#3A3A38'; e.currentTarget.style.background = '#161614' }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = '#2A2A28'; e.currentTarget.style.background = 'transparent' }}>
-              Join Waitlist
-            </a>
+              Get Started
+            </Link>
           </div>
 
           {/* TEAM */}
@@ -308,11 +319,11 @@ export default function Landing() {
                 </li>
               ))}
             </ul>
-            <a href="#waitlist" style={{ display: 'block', boxSizing: 'border-box', padding: '11px 0', borderRadius: 7, fontSize: 14, fontWeight: 500, textAlign: 'center', background: '#3B82F6', color: '#fff', border: 'none', textDecoration: 'none', transition: 'background 150ms' }}
+            <Link to="/signup" style={{ display: 'block', boxSizing: 'border-box', padding: '11px 0', borderRadius: 7, fontSize: 14, fontWeight: 500, textAlign: 'center', background: '#3B82F6', color: '#fff', border: 'none', textDecoration: 'none', transition: 'background 150ms' }}
               onMouseEnter={e => e.currentTarget.style.background = '#2563EB'}
               onMouseLeave={e => e.currentTarget.style.background = '#3B82F6'}>
-              Join Waitlist
-            </a>
+              Get Started
+            </Link>
           </div>
 
           {/* ENTERPRISE */}
@@ -348,60 +359,25 @@ export default function Landing() {
             EARLY ACCESS
           </p>
           <h2 style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: '1rem', color: '#F5F4F0' }}>
-            Be first when we launch.
+            Ready to find your AWS waste?
           </h2>
           <p style={{ fontSize: '0.95rem', color: '#888884', lineHeight: 1.75, marginBottom: '2rem' }}>
-            Join the waitlist and get 30 days free when Vaultix AI opens to the public.
+            Connect your AWS account in 5 minutes. You only pay when we save you money.
           </p>
-
-          {waitlistDone ? (
-            <div style={{
-              background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)',
-              borderRadius: 8, padding: '1.25rem', color: '#6EE7B7', fontSize: 14, fontWeight: 500
-            }}>
-              You're on the list! We'll be in touch.
-            </div>
-          ) : (
-            <form onSubmit={handleWaitlist} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <input
-                type="email"
-                required
-                placeholder="you@company.com"
-                value={waitlistEmail}
-                onChange={e => { setWaitlistEmail(e.target.value); setWaitlistError('') }}
-                onFocus={() => setWaitlistFocused(true)}
-                onBlur={() => setWaitlistFocused(false)}
-                style={{
-                  width: '100%', boxSizing: 'border-box',
-                  background: '#0D0D0D',
-                  border: `1px solid ${waitlistError ? 'rgba(239,68,68,0.5)' : waitlistFocused ? '#3B82F6' : '#222220'}`,
-                  borderRadius: 8, padding: '11px 14px',
-                  fontSize: 14, color: '#F5F4F0', outline: 'none',
-                  transition: 'border-color 150ms',
-                }}
-              />
-              {waitlistError && (
-                <p style={{ fontSize: 13, color: '#FCA5A5', margin: 0, textAlign: 'left' }}>
-                  {waitlistError}
-                </p>
-              )}
-              <button
-                type="submit"
-                disabled={waitlistLoading}
-                style={{
-                  width: '100%', background: '#3B82F6', color: '#fff',
-                  border: 'none', borderRadius: 8, padding: '11px 0',
-                  fontSize: 14, fontWeight: 600, cursor: waitlistLoading ? 'not-allowed' : 'pointer',
-                  opacity: waitlistLoading ? 0.7 : 1,
-                  transition: 'background 150ms, transform 150ms',
-                }}
-                onMouseEnter={e => { if (!waitlistLoading) { e.currentTarget.style.background = '#2563EB'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
-                onMouseLeave={e => { e.currentTarget.style.background = '#3B82F6'; e.currentTarget.style.transform = 'translateY(0)' }}
-              >
-                {waitlistLoading ? 'Joining...' : 'Join Waitlist →'}
-              </button>
-            </form>
-          )}
+          <Link to="/signup" style={{
+            display: 'inline-block', background: '#3B82F6', color: '#fff',
+            border: 'none', borderRadius: 8, padding: '12px 28px',
+            fontSize: 14, fontWeight: 600, textDecoration: 'none',
+            transition: 'background 150ms, transform 150ms',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#2563EB'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#3B82F6'; e.currentTarget.style.transform = 'translateY(0)' }}>
+            Get Started Free →
+          </Link>
+          <p style={{ fontSize: 13, color: '#555552', marginTop: '1.25rem' }}>
+            Already have an account?{' '}
+            <Link to="/login" style={{ color: '#3B82F6', textDecoration: 'none' }}>Log in</Link>
+          </p>
         </div>
       </section>
 
