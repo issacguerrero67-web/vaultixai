@@ -17,24 +17,35 @@ const NAV_ITEMS = [
   { label: 'Settings',     icon: '⊙', path: '/dashboard/settings' },
 ]
 
-const STAT_CARDS = [
-  { label: 'Total Savings Found', value: '$0' },
-  { label: 'Accounts Connected',  value: '0' },
-  { label: 'Reports Generated',   value: '0' },
-  { label: 'Last Scan',           value: 'Never' },
-]
+function formatAuditDate(ts) {
+  const d = new Date(ts)
+  return (
+    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+    ' at ' +
+    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  )
+}
+
+const SEVERITY_STYLES = {
+  high:   { background: 'rgba(239,68,68,0.15)',  color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)'  },
+  medium: { background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' },
+  low:    { background: 'rgba(34,197,94,0.15)',  color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)'  },
+}
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const location = useLocation()
+
   const [userEmail, setUserEmail] = useState('')
   const [loading, setLoading] = useState(true)
   const [signingOut, setSigningOut] = useState(false)
   const [runningAudit, setRunningAudit] = useState(false)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [auditError, setAuditError] = useState('')
-  const [awsConnected, setAwsConnected] = useState(null) // null = loading, true/false
+  const [awsConnected, setAwsConnected] = useState(null)
   const [reportCount, setReportCount] = useState(0)
+  const [latestReport, setLatestReport] = useState(null)
+  const [hoveredRow, setHoveredRow] = useState(null)
   const [showWelcome, setShowWelcome] = useState(
     () => localStorage.getItem('vaultix_welcome_dismissed') !== 'true'
   )
@@ -45,12 +56,22 @@ export default function Dashboard() {
       if (!session) { navigate('/login'); return }
       setUserEmail(session.user.email)
 
-      const [accountsRes, reportsRes] = await Promise.all([
+      const [accountsRes, reportsCountRes, latestReportRes] = await Promise.all([
         supabase.from('aws_accounts').select('id').eq('user_id', session.user.id).limit(1),
         supabase.from('audit_reports').select('id', { count: 'exact', head: true }).eq('user_id', session.user.id),
+        supabase
+          .from('audit_reports')
+          .select('id, findings, total_savings, created_at, status')
+          .eq('user_id', session.user.id)
+          .eq('status', 'complete')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ])
+
       setAwsConnected(!!(accountsRes.data && accountsRes.data.length > 0))
-      setReportCount(reportsRes.count ?? 0)
+      setReportCount(reportsCountRes.count ?? 0)
+      setLatestReport(latestReportRes.data ?? null)
       setLoading(false)
     }
     init()
@@ -112,6 +133,32 @@ export default function Dashboard() {
     }
   }
 
+  // Derived data
+  const findings = latestReport?.findings ?? []
+  const topFindings = findings.slice(0, 5)
+
+  const categoryTotals = findings.reduce((acc, f) => {
+    if (f.estimatedMonthlySavings > 0) {
+      acc[f.category] = (acc[f.category] || 0) + f.estimatedMonthlySavings
+    }
+    return acc
+  }, {})
+  const sortedCategories = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])
+  const maxSavings = sortedCategories[0]?.[1] || 1
+
+  // Dynamic stat card values
+  const totalSavings = latestReport ? '$' + (latestReport.total_savings || 0).toLocaleString() : '$0'
+  const accountsConnected = awsConnected ? '1' : '0'
+  const reportsGenerated = String(reportCount)
+  const lastScan = latestReport ? formatAuditDate(latestReport.created_at) : 'Never'
+
+  const statCards = [
+    { label: 'Total Savings Found', value: totalSavings },
+    { label: 'Accounts Connected',  value: accountsConnected },
+    { label: 'Reports Generated',   value: reportsGenerated },
+    { label: 'Last Scan',           value: lastScan },
+  ]
+
   if (loading) {
     return (
       <div style={{
@@ -135,6 +182,7 @@ export default function Dashboard() {
       minHeight: '100vh',
       display: 'flex',
     }}>
+      <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }`}</style>
 
       {/* ── SIDEBAR ── */}
       <aside style={{
@@ -149,7 +197,6 @@ export default function Dashboard() {
         left: 0,
         bottom: 0,
       }}>
-        {/* Logo */}
         <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #1E1E1C' }}>
           <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
             <span style={{
@@ -164,17 +211,12 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        {/* Nav */}
         <nav style={{ flex: 1, padding: '12px 0', overflowY: 'auto' }}>
-          {NAV_ITEMS.map(({ label, icon, path }) => {
-            const active = location.pathname === path
-            return (
-              <NavItem key={path} label={label} icon={icon} path={path} active={active} />
-            )
-          })}
+          {NAV_ITEMS.map(({ label, icon, path }) => (
+            <NavItem key={path} label={label} icon={icon} path={path} active={location.pathname === path} />
+          ))}
         </nav>
 
-        {/* User + Sign out */}
         <div style={{ padding: '16px 20px', borderTop: '1px solid #1E1E1C' }}>
           <div style={{
             fontSize: '12px', color: '#666662',
@@ -268,6 +310,7 @@ export default function Dashboard() {
             </p>
           )}
         </div>
+
         {/* AWS connection status bar */}
         <div style={{ padding: '6px 32px', borderBottom: '1px solid #1E1E1C', backgroundColor: '#0D0D0D' }}>
           {awsConnected === true && (
@@ -284,7 +327,7 @@ export default function Dashboard() {
         {/* Content */}
         <div style={{ padding: '32px', flex: 1 }}>
 
-          {/* Welcome banner — shown only for new users with no accounts and no reports */}
+          {/* Welcome banner */}
           {showWelcome && awsConnected === false && reportCount === 0 && (
             <div style={{
               background: '#1a1a18',
@@ -293,10 +336,10 @@ export default function Dashboard() {
               padding: '24px 28px',
               marginBottom: '24px',
             }}>
-              <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: '#3B82F6', textTransform: 'uppercase', marginBottom: 8, margin: '0 0 8px' }}>
+              <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: '#3B82F6', textTransform: 'uppercase', margin: '0 0 8px' }}>
                 GETTING STARTED
               </p>
-              <p style={{ fontSize: 18, fontWeight: 600, color: '#F5F4F0', marginBottom: 20, margin: '0 0 20px' }}>
+              <p style={{ fontSize: 18, fontWeight: 600, color: '#F5F4F0', margin: '0 0 20px' }}>
                 You're 3 steps away from finding your AWS waste.
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
@@ -335,66 +378,166 @@ export default function Dashboard() {
             </div>
           )}
 
+          {/* Latest audit summary bar */}
+          {latestReport && (
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8,
+              padding: '14px 20px', marginBottom: 20,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <span style={{ fontSize: 11, color: '#6b7280', fontWeight: 600, letterSpacing: '0.08em', marginRight: 12 }}>
+                  LAST AUDIT
+                </span>
+                <span style={{ color: '#F5F4F0', fontSize: 14 }}>
+                  {formatAuditDate(latestReport.created_at)}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <span style={{ color: '#3B82F6', fontWeight: 600, fontSize: 14, marginRight: 20 }}>
+                  Found ${(latestReport.total_savings || 0).toLocaleString()} in savings
+                </span>
+                <Link to="/dashboard/reports" style={{ color: '#6b7280', fontSize: 13, textDecoration: 'none' }}>
+                  View Full Report →
+                </Link>
+              </div>
+            </div>
+          )}
+
           {/* Stat cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
-            {STAT_CARDS.map(({ label, value }) => (
+            {statCards.map(({ label, value }) => (
               <StatCard key={label} label={label} value={value} />
             ))}
           </div>
 
-          {/* Empty state */}
-          <div style={{
-            backgroundColor: '#0D0D0D',
-            border: '1px solid #1E1E1C',
-            borderRadius: '12px',
-            padding: '64px 32px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            textAlign: 'center',
-          }}>
-            {/* Icon */}
-            <div style={{
-              width: '56px', height: '56px', borderRadius: '14px',
-              backgroundColor: '#111110',
-              border: '1px solid #1E1E1C',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              marginBottom: '20px',
-            }}>
-              <CloudIcon />
-            </div>
+          {/* Data-driven content / empty state */}
+          {findings.length > 0 ? (
+            <>
+              {/* Recent findings table */}
+              <div style={{ background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8, overflow: 'hidden', marginTop: 24 }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid #2a2a28', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 15, fontWeight: 600, color: '#F5F4F0' }}>Recent Findings</span>
+                  <Link to="/dashboard/reports" style={{ color: '#3B82F6', fontSize: 13, textDecoration: 'none' }}>View all →</Link>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#111110' }}>
+                      {['SEVERITY', 'CATEGORY', 'FINDING', 'EST. SAVINGS'].map(col => (
+                        <th key={col} style={{ padding: '10px 20px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#6b7280', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                          {col}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topFindings.map(finding => (
+                      <tr
+                        key={finding.id}
+                        style={{ borderTop: '1px solid #1e1e1c', cursor: 'pointer', backgroundColor: hoveredRow === finding.id ? '#1e1e1c' : 'transparent' }}
+                        onMouseEnter={() => setHoveredRow(finding.id)}
+                        onMouseLeave={() => setHoveredRow(null)}
+                        onClick={() => navigate('/dashboard/reports')}
+                      >
+                        <td style={{ padding: '14px 20px', fontSize: 14, color: '#F5F4F0', verticalAlign: 'middle' }}>
+                          <span style={{
+                            ...SEVERITY_STYLES[finding.severity] || SEVERITY_STYLES.low,
+                            borderRadius: 4, padding: '3px 8px', fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
+                          }}>
+                            {finding.severity}
+                          </span>
+                        </td>
+                        <td style={{ padding: '14px 20px', fontSize: 14, color: '#9ca3af', verticalAlign: 'middle' }}>
+                          {finding.category}
+                        </td>
+                        <td style={{ padding: '14px 20px', fontSize: 14, color: '#F5F4F0', verticalAlign: 'middle', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {finding.title}
+                        </td>
+                        <td style={{ padding: '14px 20px', fontSize: 14, verticalAlign: 'middle' }}>
+                          {finding.estimatedMonthlySavings > 0
+                            ? <span style={{ color: '#3B82F6', fontWeight: 600 }}>${finding.estimatedMonthlySavings.toLocaleString()}/mo</span>
+                            : <span style={{ color: '#6b7280' }}>—</span>
+                          }
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-            <h2 style={{
-              fontSize: '18px', fontWeight: 600, color: '#F5F4F0',
-              margin: '0 0 8px', letterSpacing: '-0.02em',
+              {/* Savings by category */}
+              {sortedCategories.length > 0 && (
+                <div style={{ background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8, padding: '20px', marginTop: 16 }}>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: '#F5F4F0', marginBottom: 20, margin: '0 0 20px' }}>
+                    Savings by Category
+                  </p>
+                  {sortedCategories.map(([category, total]) => (
+                    <div key={category} style={{ display: 'flex', alignItems: 'center', marginBottom: 14, gap: 12 }}>
+                      <span style={{ width: 110, fontSize: 13, color: '#9ca3af' }}>{category}</span>
+                      <div style={{ flex: 1, background: '#2a2a28', borderRadius: 4, height: 6 }}>
+                        <div style={{ width: (total / maxSavings * 100) + '%', background: '#3B82F6', borderRadius: 4, height: 6 }} />
+                      </div>
+                      <span style={{ width: 80, textAlign: 'right', fontSize: 13, color: '#3B82F6', fontWeight: 600 }}>
+                        ${total.toLocaleString()}/mo
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : latestReport ? (
+            /* Audit ran but no findings */
+            <div style={{ background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8, padding: 32, textAlign: 'center', marginTop: 24 }}>
+              <p style={{ color: '#6b7280', fontSize: 14, margin: 0 }}>No waste found in your last audit.</p>
+              <p style={{ color: '#444', fontSize: 13, marginTop: 8, margin: '8px 0 0' }}>Your AWS account looks clean. We'll re-scan automatically every 30 days.</p>
+            </div>
+          ) : (
+            /* No audit yet — original empty state */
+            <div style={{
+              backgroundColor: '#0D0D0D',
+              border: '1px solid #1E1E1C',
+              borderRadius: '12px',
+              padding: '64px 32px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
             }}>
-              No AWS accounts connected yet
-            </h2>
-            <p style={{
-              color: '#666662', fontSize: '14px', lineHeight: 1.7,
-              maxWidth: '380px', margin: '0 0 28px',
-            }}>
-              Connect your first AWS account to run your first audit and start finding savings.
-            </p>
-            <Link
-              to="/dashboard/connect"
-              style={{
-                backgroundColor: '#3B82F6',
-                color: '#fff',
-                textDecoration: 'none',
-                borderRadius: '8px',
-                padding: '10px 22px',
-                fontSize: '14px',
-                fontWeight: 600,
-                transition: 'transform 150ms, box-shadow 150ms',
-                display: 'inline-block',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
-            >
-              Connect AWS Account →
-            </Link>
-          </div>
+              <div style={{
+                width: '56px', height: '56px', borderRadius: '14px',
+                backgroundColor: '#111110',
+                border: '1px solid #1E1E1C',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginBottom: '20px',
+              }}>
+                <CloudIcon />
+              </div>
+              <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#F5F4F0', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+                No AWS accounts connected yet
+              </h2>
+              <p style={{ color: '#666662', fontSize: '14px', lineHeight: 1.7, maxWidth: '380px', margin: '0 0 28px' }}>
+                Connect your first AWS account to run your first audit and start finding savings.
+              </p>
+              <Link
+                to="/dashboard/connect"
+                style={{
+                  backgroundColor: '#3B82F6',
+                  color: '#fff',
+                  textDecoration: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 22px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  transition: 'transform 150ms, box-shadow 150ms',
+                  display: 'inline-block',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
+              >
+                Connect AWS Account →
+              </Link>
+            </div>
+          )}
         </div>
       </main>
     </div>
