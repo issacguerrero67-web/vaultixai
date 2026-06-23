@@ -57,7 +57,7 @@ Always provide specific, actionable recommendations with exact dollar amounts wh
 export async function runAuditEngine(awsData) {
   const response = await client.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 2000,
+    max_tokens: 4000,
     system: SYSTEM_PROMPT,
     messages: [
       {
@@ -72,6 +72,22 @@ export async function runAuditEngine(awsData) {
   // Strip markdown code fences if the model wraps output despite instructions
   const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
 
-  const findings = JSON.parse(cleaned)
+  let findings
+  try {
+    findings = JSON.parse(cleaned)
+  } catch (parseErr) {
+    console.error('JSON parse failed:', parseErr.message)
+    console.error('Raw response:', text.substring(0, 500))
+    findings = [{
+      id: 'parse-error-fallback',
+      severity: 'medium',
+      category: 'General',
+      title: 'Audit completed — please re-run for full results',
+      description: 'The audit engine encountered an issue processing the full response. This is usually temporary.',
+      recommendation: 'Click Run Audit again to get your full findings.',
+      estimatedMonthlySavings: 0,
+    }]
+  }
+
   return findings
 }
