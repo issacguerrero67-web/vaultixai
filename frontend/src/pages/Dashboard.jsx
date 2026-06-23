@@ -47,6 +47,20 @@ export default function Dashboard() {
     navigate('/login')
   }
 
+  async function runAudit() {
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/audit/run`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session?.access_token}`,
+      },
+    })
+    const data = await res.json()
+    console.log('Audit result:', JSON.stringify(data, null, 2))
+    alert(res.ok ? 'Audit ran! Check console.' : 'Error: ' + data.error)
+  }
+
   if (loading) {
     return (
       <div style={{
@@ -169,6 +183,7 @@ export default function Dashboard() {
             }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
+            onClick={runAudit}
           >
             Run Audit
           </button>
