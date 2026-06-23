@@ -35,12 +35,18 @@ router.post('/verify', requireAuth, async (req, res, next) => {
 
     await client.send(command)
 
-    // Persist account — upsert so re-connecting the same role is idempotent
-    await supabase.from('aws_accounts').upsert({
+    console.log('AssumeRole succeeded, inserting into aws_accounts...')
+    console.log('user_id:', req.user.id)
+    console.log('role_arn:', roleArn)
+
+    const { data, error } = await supabase.from('aws_accounts').upsert({
       user_id: req.user.id,
       account_name: 'My AWS Account',
       role_arn: roleArn,
     }, { onConflict: 'role_arn', ignoreDuplicates: true })
+
+    console.log('Supabase insert data:', JSON.stringify(data))
+    console.log('Supabase insert error:', JSON.stringify(error))
 
     res.json({ success: true, message: 'Role verified successfully.' })
   } catch (err) {
