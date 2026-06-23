@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard',   icon: '⊡', path: '/dashboard' },
   { label: 'Reports',     icon: '≡', path: '/dashboard/reports' },
   { label: 'Billing',     icon: '◈', path: '/dashboard/billing' },
-  { label: 'Connect AWS', icon: '⊕', path: '/dashboard/connect' },
+  { label: 'AWS Accounts', icon: '⊕', path: '/dashboard/connect' },
   { label: 'Settings',    icon: '⊙', path: '/dashboard/settings' },
 ]
 
@@ -390,38 +390,39 @@ export default function Settings() {
                   </div>
 
                   {confirmDisconnectId === account.id ? (
-                    <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-                      <button
-                        onClick={() => setConfirmDisconnectId(null)}
-                        style={{
-                          backgroundColor: 'transparent',
-                          border: '1px solid #2A2A28',
-                          borderRadius: '6px',
-                          color: '#888884',
-                          fontSize: '12px',
-                          fontWeight: 500,
-                          padding: '6px 12px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Cancel
-                      </button>
+                    <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                      <span style={{ fontSize: 13, color: '#ef4444' }}>Remove this account?</span>
                       <button
                         onClick={() => handleDisconnect(account.id)}
                         disabled={disconnectingId === account.id}
                         style={{
-                          backgroundColor: '#EF4444',
-                          border: 'none',
+                          background: 'rgba(239,68,68,0.15)',
+                          border: '1px solid rgba(239,68,68,0.3)',
+                          color: '#ef4444',
                           borderRadius: '6px',
-                          color: '#fff',
-                          fontSize: '12px',
-                          fontWeight: 600,
                           padding: '6px 12px',
+                          fontSize: '13px',
                           cursor: disconnectingId === account.id ? 'not-allowed' : 'pointer',
+                          marginLeft: '8px',
                           opacity: disconnectingId === account.id ? 0.7 : 1,
                         }}
                       >
-                        {disconnectingId === account.id ? 'Disconnecting…' : 'Confirm disconnect'}
+                        {disconnectingId === account.id ? 'Removing…' : 'Yes, remove'}
+                      </button>
+                      <button
+                        onClick={() => setConfirmDisconnectId(null)}
+                        style={{
+                          background: 'none',
+                          border: '1px solid #2a2a28',
+                          color: '#6b7280',
+                          borderRadius: '6px',
+                          padding: '6px 12px',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          marginLeft: '6px',
+                        }}
+                      >
+                        Cancel
                       </button>
                     </div>
                   ) : (
@@ -460,20 +461,22 @@ export default function Settings() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <div style={{ fontSize: '13px', fontWeight: 600, color: '#F5F4F0', marginBottom: '4px' }}>
-                {PLAN_LABELS[plan] ?? 'Free'} plan
+                {plan === 'team' ? 'Team Plan' : plan === 'enterprise' ? 'Enterprise' : 'Standard (Success-Based)'}
               </div>
               <div style={{ fontSize: '12px', color: '#666662' }}>
-                {plan === 'free'
-                  ? 'Upgrade to unlock monthly re-scans and full audit history.'
-                  : 'Success-based billing — you only pay when we find savings.'}
+                {plan === 'team'
+                  ? 'You pay 15% of verified savings found.'
+                  : plan === 'enterprise'
+                  ? 'Custom rate — contact your account manager.'
+                  : 'You pay 20% of verified savings found. No savings = no charge.'}
               </div>
             </div>
             <Link
               to="/dashboard/billing"
               style={{
-                backgroundColor: plan === 'free' ? '#3B82F6' : 'transparent',
-                border: plan === 'free' ? 'none' : '1px solid #2A2A28',
-                color: plan === 'free' ? '#fff' : '#888884',
+                backgroundColor: '#3B82F6',
+                border: 'none',
+                color: '#fff',
                 fontSize: '13px',
                 fontWeight: 600,
                 padding: '8px 16px',
@@ -483,7 +486,7 @@ export default function Settings() {
                 flexShrink: 0,
               }}
             >
-              {plan === 'free' ? 'Upgrade plan' : 'Manage billing'}
+              Manage Billing
             </Link>
           </div>
         </SectionCard>

@@ -13,13 +13,27 @@ const NAV_ITEMS = [
   { label: 'Dashboard',   icon: '⊡', path: '/dashboard' },
   { label: 'Reports',     icon: '≡', path: '/dashboard/reports' },
   { label: 'Billing',     icon: '◈', path: '/dashboard/billing' },
-  { label: 'Connect AWS', icon: '⊕', path: '/dashboard/connect' },
+  { label: 'AWS Accounts', icon: '⊕', path: '/dashboard/connect' },
   { label: 'Settings',    icon: '⊙', path: '/dashboard/settings' },
 ]
 
 const SEV_COLOR  = { high: '#EF4444', medium: '#F59E0B', low: '#6B7280' }
 const SEV_BG     = { high: 'rgba(239,68,68,0.1)', medium: 'rgba(245,158,11,0.1)', low: 'rgba(107,114,128,0.1)' }
 const SEV_ORDER  = { high: 0, medium: 1, low: 2 }
+
+function formatRecommendation(text) {
+  const steps = text.split(/(?=\d+\.\s)/).filter(s => s.trim())
+  if (steps.length <= 1) {
+    return <p style={{ color: '#9ca3af', fontSize: 14, lineHeight: 1.6, margin: 0 }}>{text}</p>
+  }
+  return (
+    <ol style={{ margin: 0, paddingLeft: 20, color: '#9ca3af', fontSize: 14, lineHeight: 1.8 }}>
+      {steps.map((step, i) => (
+        <li key={i} style={{ marginBottom: 6 }}>{step.replace(/^\d+\.\s/, '')}</li>
+      ))}
+    </ol>
+  )
+}
 
 export default function Reports() {
   const navigate = useNavigate()
@@ -32,6 +46,8 @@ export default function Reports() {
   const [accountName, setAccountName] = useState('')
   const [searchParams] = useSearchParams()
   const paymentSuccess = searchParams.get('payment') === 'success'
+  const [expandedFindings, setExpandedFindings] = useState({})
+  const [allExpanded, setAllExpanded] = useState(false)
 
   useEffect(() => {
     async function init() {
@@ -280,9 +296,37 @@ export default function Reports() {
               </div>
 
               {/* ── FINDINGS ── */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{
+                position: 'sticky', top: 0,
+                background: '#111110', borderBottom: '1px solid #2a2a28',
+                padding: '12px 0', marginBottom: 16,
+                display: 'flex', gap: 20, alignItems: 'center', zIndex: 10,
+              }}>
+                <span style={{ fontSize: 13, color: '#F5F4F0', fontWeight: 600 }}>
+                  {sortedFindings.length} finding{sortedFindings.length !== 1 ? 's' : ''}
+                </span>
+                <span style={{ color: '#444' }}>·</span>
+                <button
+                  onClick={() => {
+                    const next = !allExpanded
+                    setAllExpanded(next)
+                    const map = {}
+                    sortedFindings.forEach(f => { map[f.id] = next })
+                    setExpandedFindings(map)
+                  }}
+                  style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: 13, cursor: 'pointer', padding: 0 }}
+                >
+                  {allExpanded ? 'Collapse all' : 'Expand all'}
+                </button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
                 {sortedFindings.map((finding) => (
-                  <FindingCard key={finding.id} finding={finding} />
+                  <FindingCard
+                    key={finding.id}
+                    finding={finding}
+                    expanded={!!expandedFindings[finding.id]}
+                    onToggle={() => setExpandedFindings(prev => ({ ...prev, [finding.id]: !prev[finding.id] }))}
+                  />
                 ))}
               </div>
 
@@ -331,28 +375,35 @@ export default function Reports() {
   )
 }
 
-function FindingCard({ finding }) {
+function FindingCard({ finding, expanded, onToggle }) {
   const sev = finding.severity || 'low'
   const color = SEV_COLOR[sev] || '#6B7280'
   const bg = SEV_BG[sev] || 'rgba(107,114,128,0.1)'
+  const descPreview = finding.description
+    ? finding.description.length > 120
+      ? finding.description.slice(0, 120) + '…'
+      : finding.description
+    : ''
 
   return (
-    <div style={{
-      backgroundColor: '#0D0D0D',
-      border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: 10, padding: '20px 24px',
-      transition: 'border-color 200ms',
-    }}
-      onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.14)'}
-      onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
+    <div
+      onClick={onToggle}
+      style={{
+        background: '#1a1a18',
+        border: '1px solid #2a2a28',
+        borderRadius: 8, padding: '18px 20px', marginBottom: 12, cursor: 'pointer',
+        transition: 'border-color 150ms',
+      }}
+      onMouseEnter={e => e.currentTarget.style.borderColor = '#3a3a38'}
+      onMouseLeave={e => e.currentTarget.style.borderColor = '#2a2a28'}
     >
-      {/* Top row: badges + savings */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
           <span style={{
             backgroundColor: bg, color, fontSize: 10, fontWeight: 700,
             letterSpacing: '0.08em', textTransform: 'uppercase',
-            padding: '3px 9px', borderRadius: 4,
+            padding: '3px 9px', borderRadius: 4, flexShrink: 0,
           }}>
             {sev}
           </span>
@@ -361,38 +412,50 @@ function FindingCard({ finding }) {
               backgroundColor: 'rgba(255,255,255,0.05)', color: '#888884',
               fontSize: 10, fontWeight: 600, letterSpacing: '0.06em',
               textTransform: 'uppercase', padding: '3px 9px', borderRadius: 4,
-              border: '1px solid rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0,
             }}>
               {finding.category}
             </span>
           )}
-        </div>
-        {finding.estimatedMonthlySavings > 0 && (
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#34D399' }}>
-            ${finding.estimatedMonthlySavings.toLocaleString()}/mo
+          <span style={{ fontSize: 15, fontWeight: 600, color: '#F5F4F0', marginLeft: 8, letterSpacing: '-0.01em', minWidth: 0 }}>
+            {finding.title}
           </span>
-        )}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+          {finding.estimatedMonthlySavings > 0 && (
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#34D399' }}>
+              ${finding.estimatedMonthlySavings.toLocaleString()}/mo
+            </span>
+          )}
+          <span style={{ fontSize: 12, color: '#6b7280', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            {expanded ? 'Close ↑' : 'Details ↓'}
+          </span>
+        </div>
       </div>
 
-      {/* Title */}
-      <h3 style={{ fontSize: 15, fontWeight: 600, color: '#F5F4F0', margin: '0 0 6px', letterSpacing: '-0.01em' }}>
-        {finding.title}
-      </h3>
-
-      {/* Description */}
-      {finding.description && (
-        <p style={{ fontSize: 13, color: '#888884', lineHeight: 1.65, margin: '0 0 10px' }}>
-          {finding.description}
+      {/* Collapsed preview */}
+      {!expanded && descPreview && (
+        <p style={{ fontSize: 13, color: '#666662', lineHeight: 1.5, margin: '10px 0 0' }}>
+          {descPreview}
         </p>
       )}
 
-      {/* Recommendation */}
-      {finding.recommendation && (
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-          <span style={{ color: '#3B82F6', fontSize: 13, flexShrink: 0, marginTop: 1 }}>→</span>
-          <p style={{ fontSize: 13, color: '#6B8CBF', lineHeight: 1.65, margin: 0 }}>
-            {finding.recommendation}
-          </p>
+      {/* Expanded content */}
+      {expanded && (
+        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #2a2a28' }} onClick={e => e.stopPropagation()}>
+          {finding.description && (
+            <p style={{ color: '#9ca3af', fontSize: 14, lineHeight: 1.6, marginBottom: 16, margin: '0 0 16px' }}>
+              {finding.description}
+            </p>
+          )}
+          {finding.recommendation && (
+            <>
+              <p style={{ fontSize: 11, fontWeight: 600, color: '#3B82F6', letterSpacing: '0.08em', marginBottom: 8, margin: '0 0 8px' }}>
+                RECOMMENDATION
+              </p>
+              {formatRecommendation(finding.recommendation)}
+            </>
+          )}
         </div>
       )}
     </div>

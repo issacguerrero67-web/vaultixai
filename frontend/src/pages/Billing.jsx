@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard',   icon: '⊡', path: '/dashboard' },
   { label: 'Reports',     icon: '≡', path: '/dashboard/reports' },
   { label: 'Billing',     icon: '◈', path: '/dashboard/billing' },
-  { label: 'Connect AWS', icon: '⊕', path: '/dashboard/connect' },
+  { label: 'AWS Accounts', icon: '⊕', path: '/dashboard/connect' },
   { label: 'Settings',    icon: '⊙', path: '/dashboard/settings' },
 ]
 
@@ -209,10 +209,10 @@ export default function Billing() {
             <>
               <div style={{ marginBottom: 28 }}>
                 <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.03em', color: '#F5F4F0', margin: '0 0 8px' }}>
-                  Choose a plan
+                  Plans & Billing
                 </h2>
                 <p style={{ color: '#6B7280', fontSize: 14, margin: 0, lineHeight: 1.7 }}>
-                  You only pay a percentage of the savings we find. No savings — no charge.
+                  Success-based pricing — we only charge when we save you money.
                 </p>
               </div>
 
@@ -244,10 +244,13 @@ export default function Billing() {
                 <div style={{
                   background: 'rgba(59,130,246,0.08)',
                   border: '1px solid rgba(59,130,246,0.2)',
-                  borderRadius: 8, padding: '16px 20px', marginBottom: 24,
-                  fontSize: 14, color: '#9CA3AF',
+                  borderRadius: 8, padding: '14px 18px', marginBottom: 24,
+                  display: 'flex', alignItems: 'flex-start', gap: 12,
                 }}>
-                  No savings identified yet. Plans start when we find savings.
+                  <span style={{ color: '#3B82F6', fontSize: 16, marginTop: 1 }}>ℹ</span>
+                  <span style={{ color: '#9ca3af', fontSize: 14, lineHeight: 1.5 }}>
+                    You only pay when we find real savings. Your plan activates automatically after your first audit identifies waste in your AWS account.
+                  </span>
                 </div>
               )}
 
@@ -358,6 +361,11 @@ export default function Billing() {
               <p style={{ fontSize: 12, color: '#555552', marginTop: 20, lineHeight: 1.6 }}>
                 Payments processed securely by Stripe. You'll be redirected to Stripe Checkout to complete setup.
               </p>
+
+              <div style={{ textAlign: 'center', marginTop: 32, color: '#6b7280', fontSize: 13 }}>
+                Need help choosing?{' '}
+                <a href="mailto:issacguerrero67@gmail.com" style={{ color: '#3B82F6', textDecoration: 'none' }}>Contact us</a>
+              </div>
             </>
           )}
         </div>

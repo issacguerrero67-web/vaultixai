@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard',    icon: '⊡', path: '/dashboard' },
   { label: 'Reports',      icon: '≡', path: '/dashboard/reports' },
   { label: 'Billing',      icon: '◈', path: '/dashboard/billing' },
-  { label: 'Connect AWS',  icon: '⊕', path: '/dashboard/connect' },
+  { label: 'AWS Accounts', icon: '⊕', path: '/dashboard/connect' },
   { label: 'Settings',     icon: '⊙', path: '/dashboard/settings' },
 ]
 
