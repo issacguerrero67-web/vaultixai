@@ -12,8 +12,9 @@ if (!document.head.querySelector('[href*="Geist"]')) {
 const NAV_ITEMS = [
   { label: 'Dashboard',    icon: '⊡', path: '/dashboard' },
   { label: 'Reports',      icon: '≡', path: '/dashboard/reports' },
-  { label: 'Billing',      icon: '◈', path: '/dashboard/billing' },
+  { label: 'Billing',      icon: '◇', path: '/dashboard/billing' },
   { label: 'AWS Accounts', icon: '⊕', path: '/dashboard/accounts' },
+  { label: 'Autopilot',    icon: '⚡', path: '/dashboard/autopilot' },
   { label: 'Settings',     icon: '⊙', path: '/dashboard/settings' },
 ]
 
@@ -319,10 +320,10 @@ export default function AWSAccounts() {
         }}>
           {[
             { label: 'Dashboard', path: '/dashboard', icon: '⊡' },
-            { label: 'Reports', path: '/dashboard/reports', icon: '≡' },
-            { label: 'Billing', path: '/dashboard/billing', icon: '◇' },
-            { label: 'Accounts', path: '/dashboard/accounts', icon: '⊕' },
-            { label: 'Settings', path: '/dashboard/settings', icon: '⊙' },
+            { label: 'Reports',   path: '/dashboard/reports', icon: '≡' },
+            { label: 'Autopilot', path: '/dashboard/autopilot', icon: '⚡' },
+            { label: 'Accounts',  path: '/dashboard/accounts', icon: '⊕' },
+            { label: 'Settings',  path: '/dashboard/settings', icon: '⊙' },
           ].map(({ label, path, icon }) => {
             const isActive = window.location.pathname === path
             return (
