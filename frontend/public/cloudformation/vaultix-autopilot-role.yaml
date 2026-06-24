@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Vaultix AI Autopilot Role - Grants limited write access for automated cost optimization'
+
+Parameters:
+  ExternalId:
+    Type: String
+    Description: External ID provided by Vaultix AI for secure cross-account access
+
+Resources:
+  VaultixAutopilotRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: VaultixAutopilotRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: 'arn:aws:iam::102282012674:user/vaultix-backend'
+            Action: 'sts:AssumeRole'
+            Condition:
+              StringEquals:
+                'sts:ExternalId': !Ref ExternalId
+      Policies:
+        - PolicyName: VaultixAutopilotPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # Allow safe cost optimization actions
+              - Sid: AllowEBSActions
+                Effect: Allow
+                Resource: '*'
+                Action:
+                  - ec2:DescribeVolumes
+                  - ec2:DescribeSnapshots
+                  - ec2:CreateSnapshot
+                  - ec2:DeleteVolume
+                  - ec2:DeleteSnapshot
+                  - ec2:DescribeTags
+
+              - Sid: AllowElasticIPActions
+                Effect: Allow
+                Resource: '*'
+                Action:
+                  - ec2:DescribeAddresses
+                  - ec2:ReleaseAddress
+
+              - Sid: AllowEC2StopOnly
+                Effect: Allow
+                Resource: '*'
+                Action:
+                  - ec2:DescribeInstances
+                  - ec2:DescribeInstanceStatus
+                  - ec2:StopInstances
+
+              # Explicitly deny all dangerous actions
+              - Sid: DenyDangerousActions
+                Effect: Deny
+                Resource: '*'
+                Action:
+                  - ec2:TerminateInstances
+                  - ec2:DeleteSecurityGroup
+                  - ec2:DeleteVpc
+                  - ec2:DeleteSubnet
+                  - ec2:DeleteInternetGateway
+                  - ec2:DeleteRouteTable
+                  - rds:DeleteDBInstance
+                  - rds:DeleteDBCluster
+                  - s3:DeleteBucket
+                  - s3:DeleteObject
+                  - iam:*
+                  - organizations:*
+                  - cloudtrail:DeleteTrail
+                  - cloudtrail:StopLogging
+                  - kms:ScheduleKeyDeletion
+                  - kms:DisableKey
+
+Outputs:
+  RoleArn:
+    Description: 'ARN of the Vaultix Autopilot Role'
+    Value: !GetAtt VaultixAutopilotRole.Arn
+    Export:
+      Name: VaultixAutopilotRoleArn
