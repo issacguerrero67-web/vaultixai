@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
@@ -10,12 +11,19 @@ import Settings from './pages/Settings'
 import Billing from './pages/Billing'
 import ResetPassword from './pages/ResetPassword'
 import AWSAccounts from './pages/AWSAccounts'
+import { supabase } from './lib/supabase'
 
-// Auth protection lives in each protected page via supabase.auth.getSession().
-// This wrapper is intentionally passive — no redirect here — so that email
-// confirmation links (which trigger onAuthStateChange) don't interfere with
-// the user's current location. Login redirects to /dashboard explicitly.
 function RequireAuth({ children }) {
+  const [session, setSession] = useState(undefined)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+    })
+  }, [])
+
+  if (session === undefined) return null // still loading
+  if (!session) return <Navigate to="/login" replace />
   return children
 }
 

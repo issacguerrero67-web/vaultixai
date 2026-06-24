@@ -22,7 +22,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET)
   } catch (err) {
     console.error('Webhook signature verification failed:', err.message)
-    return res.status(400).send(`Webhook Error: ${err.message}`)
+    return res.status(400).send('Webhook signature verification failed')
   }
 
   if (event.type === 'checkout.session.completed') {
@@ -49,12 +49,27 @@ router.use(requireAuth)
 // POST /api/stripe/create-checkout
 router.post('/create-checkout', async (req, res, next) => {
   try {
-    const { savingsAmount, tier } = req.body
+    const { tier } = req.body
 
-    if (!savingsAmount || !tier || !TIER_RATES[tier]) {
-      return res.status(400).json({ error: 'savingsAmount and a valid tier (standard or team) are required.' })
+    if (!tier || !TIER_RATES[tier]) {
+      return res.status(400).json({ error: 'A valid tier (standard or team) is required.' })
     }
 
+    // Fetch savings server-side — never trust client-supplied amount
+    const { data: report, error: reportError } = await supabase
+      .from('audit_reports')
+      .select('total_savings')
+      .eq('user_id', req.user.id)
+      .eq('status', 'complete')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (reportError || !report) {
+      return res.status(400).json({ error: 'No completed audit found. Run an audit first.' })
+    }
+
+    const savingsAmount = report.total_savings
     const rate = TIER_RATES[tier]
     const feeUsd = savingsAmount * rate
     const feeCents = Math.round(feeUsd * 100)

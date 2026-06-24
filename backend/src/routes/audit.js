@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { createClient } from '@supabase/supabase-js'
+import rateLimit from 'express-rate-limit'
 import { requireAuth } from '../middleware/auth.js'
 import { fetchAwsData } from '../services/awsFetcher.js'
 import { runAuditEngine } from '../services/auditEngine.js'
@@ -12,10 +13,19 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 )
 
+const auditLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,
+  keyGenerator: (req) => req.user?.id || req.ip,
+  message: { error: 'Too many audit requests. Please wait before running another audit.' },
+  standardHeaders: true,
+  legacyHeaders: false
+})
+
 router.use(requireAuth)
 
 // POST /api/audit/run
-router.post('/run', async (req, res, next) => {
+router.post('/run', auditLimiter, async (req, res, next) => {
   try {
     // Look up the user's first connected AWS account
     const { data: accounts, error: dbError } = await supabase

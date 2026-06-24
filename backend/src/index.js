@@ -13,7 +13,14 @@ import { startCronJobs } from './services/cronJobs.js'
 const app = express()
 const PORT = process.env.PORT || 3001
 
-app.use(cors())
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production'
+    ? 'https://vaultixai.app'
+    : 'http://localhost:5173',
+  credentials: true
+}))
+
+// Skip express.json() for the Stripe webhook — it needs the raw body for signature verification
 app.use((req, res, next) => {
   if (req.originalUrl === '/api/stripe/webhook') {
     next()
