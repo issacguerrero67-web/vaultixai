@@ -48,6 +48,13 @@ export default function Reports() {
   const paymentSuccess = searchParams.get('payment') === 'success'
   const [expandedFindings, setExpandedFindings] = useState({})
   const [allExpanded, setAllExpanded] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     async function init() {
@@ -143,7 +150,7 @@ export default function Reports() {
       {/* ── SIDEBAR ── */}
       <aside style={{
         width: 240, flexShrink: 0, backgroundColor: '#0D0D0D',
-        borderRight: '1px solid #1E1E1C', display: 'flex', flexDirection: 'column',
+        borderRight: '1px solid #1E1E1C', display: isMobile ? 'none' : 'flex', flexDirection: 'column',
         position: 'fixed', top: 0, left: 0, bottom: 0,
       }}>
         <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #1E1E1C' }}>
@@ -184,7 +191,7 @@ export default function Reports() {
       </aside>
 
       {/* ── MAIN ── */}
-      <main style={{ marginLeft: 240, flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <main style={{ marginLeft: isMobile ? 0 : 240, flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
 
         {/* Top bar */}
         <div style={{
@@ -212,7 +219,7 @@ export default function Reports() {
           </button>
         </div>
 
-        <div style={{ padding: 32, flex: 1 }}>
+        <div style={{ padding: isMobile ? 16 : 32, flex: 1 }}>
 
           {paymentSuccess && (
             <div style={{
@@ -267,7 +274,7 @@ export default function Reports() {
               {/* ── REPORT HEADER ── */}
               <div style={{
                 backgroundColor: '#0D0D0D', border: '1px solid #1E1E1C',
-                borderRadius: 12, padding: '28px 32px', marginBottom: 24,
+                borderRadius: 12, padding: isMobile ? '16px' : '28px 32px', marginBottom: 24,
               }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
                   <div>
@@ -300,7 +307,7 @@ export default function Reports() {
                 position: 'sticky', top: 0,
                 background: '#111110', borderBottom: '1px solid #2a2a28',
                 padding: '12px 0', marginBottom: 16,
-                display: 'flex', gap: 20, alignItems: 'center', zIndex: 10,
+                display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 8 : 20, alignItems: isMobile ? 'flex-start' : 'center', zIndex: 10,
               }}>
                 <span style={{ fontSize: 13, color: '#F5F4F0', fontWeight: 600 }}>
                   {sortedFindings.length} finding{sortedFindings.length !== 1 ? 's' : ''}
@@ -326,6 +333,7 @@ export default function Reports() {
                     finding={finding}
                     expanded={!!expandedFindings[finding.id]}
                     onToggle={() => setExpandedFindings(prev => ({ ...prev, [finding.id]: !prev[finding.id] }))}
+                    isMobile={isMobile}
                   />
                 ))}
               </div>
@@ -375,7 +383,7 @@ export default function Reports() {
   )
 }
 
-function FindingCard({ finding, expanded, onToggle }) {
+function FindingCard({ finding, expanded, onToggle, isMobile }) {
   const sev = finding.severity || 'low'
   const color = SEV_COLOR[sev] || '#6B7280'
   const bg = SEV_BG[sev] || 'rgba(107,114,128,0.1)'
@@ -398,8 +406,8 @@ function FindingCard({ finding, expanded, onToggle }) {
       onMouseLeave={e => e.currentTarget.style.borderColor = '#2a2a28'}
     >
       {/* Header row */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1, flexWrap: 'wrap' }}>
           <span style={{
             backgroundColor: bg, color, fontSize: 10, fontWeight: 700,
             letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -417,7 +425,7 @@ function FindingCard({ finding, expanded, onToggle }) {
               {finding.category}
             </span>
           )}
-          <span style={{ fontSize: 15, fontWeight: 600, color: '#F5F4F0', marginLeft: 8, letterSpacing: '-0.01em', minWidth: 0 }}>
+          <span style={{ fontSize: 15, fontWeight: 600, color: '#F5F4F0', marginLeft: 8, letterSpacing: '-0.01em', minWidth: 0, whiteSpace: isMobile ? 'normal' : undefined }}>
             {finding.title}
           </span>
         </div>

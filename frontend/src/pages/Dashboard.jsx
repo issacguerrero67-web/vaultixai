@@ -49,6 +49,13 @@ export default function Dashboard() {
   const [showWelcome, setShowWelcome] = useState(
     () => localStorage.getItem('vaultix_welcome_dismissed') !== 'true'
   )
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     async function init() {
@@ -182,16 +189,7 @@ export default function Dashboard() {
       minHeight: '100vh',
       display: 'flex',
     }}>
-      <style>{`
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        @media (max-width: 768px) {
-          .dashboard-stats { grid-template-columns: repeat(2, 1fr) !important; }
-          .dashboard-sidebar { display: none !important; }
-          .dashboard-main { margin-left: 0 !important; padding: 16px !important; }
-          .findings-table th:nth-child(2),
-          .findings-table td:nth-child(2) { display: none !important; }
-        }
-      `}</style>
+      <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }`}</style>
 
       {/* ── SIDEBAR ── */}
       <aside style={{
@@ -199,7 +197,7 @@ export default function Dashboard() {
         flexShrink: 0,
         backgroundColor: '#0D0D0D',
         borderRight: '1px solid #1E1E1C',
-        display: 'flex',
+        display: isMobile ? 'none' : 'flex',
         flexDirection: 'column',
         position: 'fixed',
         top: 0,
@@ -258,7 +256,7 @@ export default function Dashboard() {
       </aside>
 
       {/* ── MAIN ── */}
-      <main style={{ marginLeft: '240px', flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <main style={{ marginLeft: isMobile ? 0 : '240px', flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
 
         {/* Top bar */}
         <div style={{
@@ -334,7 +332,7 @@ export default function Dashboard() {
         </div>
 
         {/* Content */}
-        <div style={{ padding: '32px', flex: 1 }}>
+        <div style={{ padding: isMobile ? '16px' : '32px', flex: 1 }}>
 
           {/* Welcome banner */}
           {showWelcome && awsConnected === false && reportCount === 0 && (
@@ -390,7 +388,8 @@ export default function Dashboard() {
           {/* Latest audit summary bar */}
           {latestReport && (
             <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              display: 'flex', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between',
+              flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 8 : 0,
               background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8,
               padding: '14px 20px', marginBottom: 20,
             }}>
@@ -414,7 +413,7 @@ export default function Dashboard() {
           )}
 
           {/* Stat cards */}
-          <div className="dashboard-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+          <div className="dashboard-stats" style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
             {statCards.map(({ label, value }) => (
               <StatCard key={label} label={label} value={value} />
             ))}
@@ -433,7 +432,7 @@ export default function Dashboard() {
                   <thead>
                     <tr style={{ backgroundColor: '#111110' }}>
                       {['SEVERITY', 'CATEGORY', 'FINDING', 'EST. SAVINGS'].map(col => (
-                        <th key={col} style={{ padding: '10px 20px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#6b7280', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                        <th key={col} style={{ padding: '10px 20px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#6b7280', letterSpacing: '0.08em', textTransform: 'uppercase', display: col === 'CATEGORY' && isMobile ? 'none' : undefined }}>
                           {col}
                         </th>
                       ))}
@@ -456,7 +455,7 @@ export default function Dashboard() {
                             {finding.severity}
                           </span>
                         </td>
-                        <td style={{ padding: '14px 20px', fontSize: 14, color: '#9ca3af', verticalAlign: 'middle' }}>
+                        <td style={{ padding: '14px 20px', fontSize: 14, color: '#9ca3af', verticalAlign: 'middle', display: isMobile ? 'none' : 'table-cell' }}>
                           {finding.category}
                         </td>
                         <td style={{ padding: '14px 20px', fontSize: 14, color: '#F5F4F0', verticalAlign: 'middle', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
