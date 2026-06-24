@@ -314,11 +314,11 @@ export default function Reports() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 24, marginTop: 20, paddingTop: 20, borderTop: '1px solid #1E1E1C' }}>
-                  <Stat label="Findings" value={sortedFindings.length} />
-                  <Stat label="High severity" value={sortedFindings.filter(f => f.severity === 'high').length} valueColor="#EF4444" />
-                  <Stat label="Medium severity" value={sortedFindings.filter(f => f.severity === 'medium').length} valueColor="#F59E0B" />
-                  <Stat label="Low severity" value={sortedFindings.filter(f => f.severity === 'low').length} valueColor="#6B7280" />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 20, paddingTop: 20, borderTop: '1px solid #1E1E1C' }}>
+                  <Stat label="Findings" value={sortedFindings.length} isMobile={isMobile} />
+                  <Stat label="High severity" value={sortedFindings.filter(f => f.severity === 'high').length} valueColor="#EF4444" isMobile={isMobile} />
+                  <Stat label="Medium severity" value={sortedFindings.filter(f => f.severity === 'medium').length} valueColor="#F59E0B" isMobile={isMobile} />
+                  <Stat label="Low severity" value={sortedFindings.filter(f => f.severity === 'low').length} valueColor="#6B7280" isMobile={isMobile} />
                 </div>
               </div>
 
@@ -520,13 +520,13 @@ function FindingCard({ finding, expanded, onToggle, isMobile }) {
   )
 }
 
-function Stat({ label, value, valueColor }) {
+function Stat({ label, value, valueColor, isMobile }) {
   return (
-    <div>
-      <div style={{ fontSize: 11, color: '#666662', fontWeight: 500, marginBottom: 4, letterSpacing: '0.04em' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ fontSize: isMobile ? 10 : 12, color: '#6b7280', fontWeight: 600, lineHeight: 1.2 }}>
         {label}
       </div>
-      <div style={{ fontSize: 22, fontWeight: 700, color: valueColor || '#F5F4F0', letterSpacing: '-0.02em' }}>
+      <div style={{ fontSize: isMobile ? 20 : 28, fontWeight: 700, color: valueColor || '#F5F4F0', letterSpacing: '-0.02em' }}>
         {value}
       </div>
     </div>

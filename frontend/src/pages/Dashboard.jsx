@@ -279,7 +279,7 @@ export default function Dashboard() {
           alignItems: runningAudit ? 'flex-start' : 'center',
           justifyContent: 'space-between',
         }}>
-          <h1 style={{ fontSize: '18px', fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: isMobile ? 18 : 24, fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
             Dashboard
           </h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -290,6 +290,7 @@ export default function Dashboard() {
                 textDecoration: 'none', padding: '8px 14px',
                 border: '1px solid #1E1E1C', borderRadius: '8px',
                 transition: 'color 150ms, border-color 150ms',
+                display: isMobile ? 'none' : undefined,
               }}
               onMouseEnter={e => { e.currentTarget.style.color = '#F5F4F0'; e.currentTarget.style.borderColor = '#3B3B38' }}
               onMouseLeave={e => { e.currentTarget.style.color = '#888884'; e.currentTarget.style.borderColor = '#1E1E1C' }}
@@ -304,8 +305,8 @@ export default function Dashboard() {
                 color: '#fff',
                 border: 'none',
                 borderRadius: '8px',
-                padding: '8px 18px',
-                fontSize: '14px',
+                padding: isMobile ? '8px 12px' : '8px 18px',
+                fontSize: isMobile ? 13 : '14px',
                 fontWeight: 600,
                 cursor: (runningAudit || awsConnected === false) ? 'not-allowed' : 'pointer',
                 opacity: runningAudit ? 0.7 : awsConnected === false ? 0.4 : 1,
@@ -436,12 +437,12 @@ export default function Dashboard() {
           {findings.length > 0 ? (
             <>
               {/* Recent findings table */}
-              <div style={{ background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8, overflow: 'hidden', marginTop: 24 }}>
+              <div style={{ background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8, overflow: 'hidden', marginTop: 24, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                 <div style={{ padding: '16px 20px', borderBottom: '1px solid #2a2a28', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 15, fontWeight: 600, color: '#F5F4F0' }}>Recent Findings</span>
                   <Link to="/dashboard/reports" style={{ color: '#3B82F6', fontSize: 13, textDecoration: 'none' }}>View all →</Link>
                 </div>
-                <table className="findings-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <table className="findings-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 500 }}>
                   <thead>
                     <tr style={{ backgroundColor: '#111110' }}>
                       {['SEVERITY', 'CATEGORY', 'FINDING', 'EST. SAVINGS'].map(col => (

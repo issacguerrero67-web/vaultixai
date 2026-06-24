@@ -177,7 +177,7 @@ export default function AWSAccounts() {
       <main style={{ marginLeft: isMobile ? 0 : 240, flex: 1, padding: isMobile ? '16px 16px 70px' : 32, minWidth: 0, overflowX: 'hidden' }}>
 
         {/* Page header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: 12, marginBottom: 28 }}>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
             AWS Accounts
           </h1>
@@ -186,7 +186,7 @@ export default function AWSAccounts() {
             style={{
               background: '#3B82F6', color: 'white', border: 'none',
               borderRadius: 6, padding: '10px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-              transition: 'background 150ms',
+              transition: 'background 150ms', width: isMobile ? '100%' : undefined,
             }}
             onMouseEnter={e => e.currentTarget.style.background = '#2563EB'}
             onMouseLeave={e => e.currentTarget.style.background = '#3B82F6'}
@@ -223,15 +223,16 @@ export default function AWSAccounts() {
             {accounts.map(account => (
               <div key={account.id} style={{
                 background: '#1a1a18', border: '1px solid #2a2a28',
-                borderRadius: 8, padding: '20px 24px', marginBottom: 12,
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                borderRadius: 8, padding: isMobile ? 16 : '20px 24px', marginBottom: 12,
+                display: 'flex', flexDirection: isMobile ? 'column' : 'row',
+                alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between',
               }}>
                 {/* Left: account info */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, width: '100%' }}>
                   <span style={{ fontSize: 15, fontWeight: 600, color: '#F5F4F0' }}>
                     {account.account_name}
                   </span>
-                  <span style={{ fontSize: 12, color: '#6b7280', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 420 }}>
+                  <span style={{ fontSize: 12, color: '#6b7280', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap', wordBreak: isMobile ? 'break-all' : undefined, maxWidth: isMobile ? '100%' : 420 }}>
                     {account.role_arn}
                   </span>
                   <span style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
@@ -242,7 +243,7 @@ export default function AWSAccounts() {
                 </div>
 
                 {/* Right: actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, marginLeft: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, flexWrap: isMobile ? 'wrap' : undefined, marginLeft: isMobile ? 0 : 16, marginTop: isMobile ? 8 : 0 }}>
                   <span style={{
                     background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)',
                     color: '#22c55e', borderRadius: 20, padding: '4px 12px',
