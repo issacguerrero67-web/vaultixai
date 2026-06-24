@@ -191,6 +191,9 @@ export default function Dashboard() {
       color: '#F5F4F0',
       minHeight: '100vh',
       display: 'flex',
+      overflowX: 'hidden',
+      width: '100%',
+      maxWidth: '100vw',
     }}>
       <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }`}</style>
 
@@ -266,7 +269,7 @@ export default function Dashboard() {
       </aside>
 
       {/* ── MAIN ── */}
-      <main style={{ marginLeft: isMobile ? 0 : '240px', flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <main style={{ marginLeft: isMobile ? 0 : '240px', flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh', minWidth: 0, overflow: 'hidden' }}>
 
         {/* Top bar */}
         <div style={{
@@ -423,9 +426,9 @@ export default function Dashboard() {
           )}
 
           {/* Stat cards */}
-          <div className="dashboard-stats" style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
+          <div className="dashboard-stats" style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 16, marginBottom: 24, width: '100%' }}>
             {statCards.map(({ label, value }) => (
-              <StatCard key={label} label={label} value={value} />
+              <StatCard key={label} label={label} value={value} isMobile={isMobile} />
             ))}
           </div>
 
@@ -588,7 +591,7 @@ function NavItem({ label, icon, path, active }) {
   )
 }
 
-function StatCard({ label, value }) {
+function StatCard({ label, value, isMobile }) {
   return (
     <div style={{
       backgroundColor: '#0D0D0D',
@@ -599,7 +602,7 @@ function StatCard({ label, value }) {
       <div style={{ fontSize: '12px', color: '#666662', fontWeight: 500, marginBottom: '10px', letterSpacing: '0.02em' }}>
         {label}
       </div>
-      <div style={{ fontSize: '28px', fontWeight: 700, color: '#F5F4F0', letterSpacing: '-0.03em' }}>
+      <div style={{ fontSize: isMobile ? 16 : 28, fontWeight: 700, color: '#F5F4F0', letterSpacing: '-0.03em', wordBreak: 'break-word' }}>
         {value}
       </div>
     </div>
