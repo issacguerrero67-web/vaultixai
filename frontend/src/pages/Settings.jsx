@@ -184,6 +184,7 @@ export default function Settings() {
       color: '#F5F4F0',
       minHeight: '100vh',
       display: 'flex',
+      overflowX: 'hidden', width: '100%', maxWidth: '100vw',
     }}>
 
       {/* ── SIDEBAR ── */}
@@ -258,7 +259,7 @@ export default function Settings() {
       </aside>
 
       {/* ── MAIN ── */}
-      <main style={{ marginLeft: isMobile ? 0 : '240px', flex: 1, padding: isMobile ? '16px' : '32px', maxWidth: '720px' }}>
+      <main style={{ marginLeft: isMobile ? 0 : '240px', flex: 1, padding: isMobile ? '16px 16px 70px' : '32px', maxWidth: '720px', minWidth: 0, overflowX: 'hidden' }}>
 
         <div style={{ marginBottom: '28px' }}>
           <h1 style={{ fontSize: '18px', fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
@@ -506,6 +507,36 @@ export default function Settings() {
         </SectionCard>
 
       </main>
+
+      {isMobile && (
+        <nav style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0,
+          background: '#1a1a18', borderTop: '1px solid #2a2a28',
+          display: 'flex', justifyContent: 'space-around', alignItems: 'center',
+          padding: '8px 0 12px', zIndex: 1000,
+        }}>
+          {[
+            { label: 'Dashboard', path: '/dashboard', icon: '⊡' },
+            { label: 'Reports', path: '/dashboard/reports', icon: '≡' },
+            { label: 'Billing', path: '/dashboard/billing', icon: '◇' },
+            { label: 'Accounts', path: '/dashboard/accounts', icon: '⊕' },
+            { label: 'Settings', path: '/dashboard/settings', icon: '⊙' },
+          ].map(({ label, path, icon }) => {
+            const isActive = window.location.pathname === path
+            return (
+              <a key={path} href={path} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                gap: 3, textDecoration: 'none',
+                color: isActive ? '#3B82F6' : '#6b7280',
+                fontSize: 10, fontWeight: isActive ? 600 : 400, minWidth: 48,
+              }}>
+                <span style={{ fontSize: 20 }}>{icon}</span>
+                <span>{label}</span>
+              </a>
+            )
+          })}
+        </nav>
+      )}
     </div>
   )
 }

@@ -148,6 +148,7 @@ export default function Reports() {
       fontFamily: "'Geist', 'Inter', system-ui, sans-serif",
       backgroundColor: '#111110', color: '#F5F4F0',
       minHeight: '100vh', display: 'flex',
+      overflowX: 'hidden', width: '100%', maxWidth: '100vw',
     }}>
 
       {/* ── SIDEBAR ── */}
@@ -205,7 +206,7 @@ export default function Reports() {
       </aside>
 
       {/* ── MAIN ── */}
-      <main style={{ marginLeft: isMobile ? 0 : 240, flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <main style={{ marginLeft: isMobile ? 0 : 240, flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh', minWidth: 0, overflowX: 'hidden' }}>
 
         {/* Top bar */}
         <div style={{
@@ -233,7 +234,7 @@ export default function Reports() {
           </button>
         </div>
 
-        <div style={{ padding: isMobile ? 16 : 32, flex: 1 }}>
+        <div style={{ padding: isMobile ? '16px 16px 70px' : 32, flex: 1 }}>
 
           {paymentSuccess && (
             <div style={{
@@ -398,6 +399,36 @@ export default function Reports() {
           )}
         </div>
       </main>
+
+      {isMobile && (
+        <nav style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0,
+          background: '#1a1a18', borderTop: '1px solid #2a2a28',
+          display: 'flex', justifyContent: 'space-around', alignItems: 'center',
+          padding: '8px 0 12px', zIndex: 1000,
+        }}>
+          {[
+            { label: 'Dashboard', path: '/dashboard', icon: '⊡' },
+            { label: 'Reports', path: '/dashboard/reports', icon: '≡' },
+            { label: 'Billing', path: '/dashboard/billing', icon: '◇' },
+            { label: 'Accounts', path: '/dashboard/accounts', icon: '⊕' },
+            { label: 'Settings', path: '/dashboard/settings', icon: '⊙' },
+          ].map(({ label, path, icon }) => {
+            const isActive = window.location.pathname === path
+            return (
+              <a key={path} href={path} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                gap: 3, textDecoration: 'none',
+                color: isActive ? '#3B82F6' : '#6b7280',
+                fontSize: 10, fontWeight: isActive ? 600 : 400, minWidth: 48,
+              }}>
+                <span style={{ fontSize: 20 }}>{icon}</span>
+                <span>{label}</span>
+              </a>
+            )
+          })}
+        </nav>
+      )}
     </div>
   )
 }

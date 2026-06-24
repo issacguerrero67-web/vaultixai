@@ -345,7 +345,7 @@ export default function Dashboard() {
         </div>
 
         {/* Content */}
-        <div style={{ padding: isMobile ? '16px' : '32px', flex: 1 }}>
+        <div style={{ padding: isMobile ? '16px 16px 70px' : '32px', flex: 1 }}>
 
           {/* Welcome banner */}
           {showWelcome && awsConnected === false && reportCount === 0 && (
@@ -561,6 +561,36 @@ export default function Dashboard() {
           )}
         </div>
       </main>
+
+      {isMobile && (
+        <nav style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0,
+          background: '#1a1a18', borderTop: '1px solid #2a2a28',
+          display: 'flex', justifyContent: 'space-around', alignItems: 'center',
+          padding: '8px 0 12px', zIndex: 1000,
+        }}>
+          {[
+            { label: 'Dashboard', path: '/dashboard', icon: '⊡' },
+            { label: 'Reports', path: '/dashboard/reports', icon: '≡' },
+            { label: 'Billing', path: '/dashboard/billing', icon: '◇' },
+            { label: 'Accounts', path: '/dashboard/accounts', icon: '⊕' },
+            { label: 'Settings', path: '/dashboard/settings', icon: '⊙' },
+          ].map(({ label, path, icon }) => {
+            const isActive = window.location.pathname === path
+            return (
+              <a key={path} href={path} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                gap: 3, textDecoration: 'none',
+                color: isActive ? '#3B82F6' : '#6b7280',
+                fontSize: 10, fontWeight: isActive ? 600 : 400, minWidth: 48,
+              }}>
+                <span style={{ fontSize: 20 }}>{icon}</span>
+                <span>{label}</span>
+              </a>
+            )
+          })}
+        </nav>
+      )}
     </div>
   )
 }
