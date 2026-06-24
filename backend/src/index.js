@@ -43,6 +43,6 @@ app.use((err, req, res, next) => {
 })
 
 app.listen(PORT, () => {
-  console.log(`CloudCost AI backend running on port ${PORT}`)
+  console.log(`Vaultix AI backend running on port ${PORT}`)
   startCronJobs()
 })
