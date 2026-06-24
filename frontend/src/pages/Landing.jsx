@@ -93,6 +93,9 @@ export default function Landing() {
           Vaultix AI
         </div>
         <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+          <a href="/" style={{ color: '#888884', fontSize: 14, textDecoration: 'none', transition: 'color 150ms' }}
+            onMouseEnter={e => e.target.style.color = '#F5F4F0'}
+            onMouseLeave={e => e.target.style.color = '#888884'}>Home</a>
           <a href="#process" style={{ color: '#888884', fontSize: 14, textDecoration: 'none', transition: 'color 150ms' }}
             onMouseEnter={e => e.target.style.color = '#F5F4F0'}
             onMouseLeave={e => e.target.style.color = '#888884'}>How it works</a>
@@ -184,9 +187,9 @@ export default function Landing() {
         </div>
         <div className="process-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0 }}>
           {[
-            { num: '01 — Connect', title: 'Read-only access in 5 minutes', desc: 'Create a read-only IAM role in your AWS account. We never write to your infrastructure. No agents, no scripts.' },
-            { num: '02 — Analyze', title: 'AI scans every resource', desc: 'Our AI checks EC2, RDS, S3, networking, and more against 50+ proven cost patterns across every region.' },
-            { num: '03 — Fix', title: 'Prioritized report, delivered', desc: 'Specific resource IDs, exact savings amounts, effort levels, and a 90-day action plan. Quick wins first.' },
+            { num: '01 — Connect', title: 'Read-only access in 5 minutes', desc: 'Create a read-only role in your AWS account in under 5 minutes. We never write to your infrastructure.' },
+            { num: '02 — Analyze', title: 'We scan every resource', desc: 'We check every resource against 50+ proven cost patterns. No agents, no scripts, nothing to install.' },
+            { num: '03 — Fix', title: 'Prioritized report, delivered', desc: 'You get a clear report with exactly what to fix and how much you\'ll save. Quick wins first.' },
           ].map((step, i) => (
             <div key={i} className={`fade-up process-step-${i}`} style={{
               padding: '2rem',
