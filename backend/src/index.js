@@ -8,6 +8,7 @@ import awsAccountRouter from './routes/awsAccounts.js'
 import awsRoutes from './routes/aws.js'
 import reportsRouter from './routes/reports.js'
 import stripeRouter from './routes/stripe.js'
+import autopilotRouter from './routes/autopilot.js'
 import { startCronJobs } from './services/cronJobs.js'
 
 const app = express()
@@ -35,6 +36,7 @@ app.use('/api/aws-accounts', awsAccountRouter)
 app.use('/api/aws', awsRoutes)
 app.use('/api/reports', reportsRouter)
 app.use('/api/stripe', stripeRouter)
+app.use('/api/autopilot', autopilotRouter)
 
 // Global error handler
 app.use((err, req, res, next) => {
