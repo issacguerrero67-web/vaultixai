@@ -182,7 +182,16 @@ export default function Dashboard() {
       minHeight: '100vh',
       display: 'flex',
     }}>
-      <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }`}</style>
+      <style>{`
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        @media (max-width: 768px) {
+          .dashboard-stats { grid-template-columns: repeat(2, 1fr) !important; }
+          .dashboard-sidebar { display: none !important; }
+          .dashboard-main { margin-left: 0 !important; padding: 16px !important; }
+          .findings-table th:nth-child(2),
+          .findings-table td:nth-child(2) { display: none !important; }
+        }
+      `}</style>
 
       {/* ── SIDEBAR ── */}
       <aside style={{
@@ -405,7 +414,7 @@ export default function Dashboard() {
           )}
 
           {/* Stat cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
+          <div className="dashboard-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px' }}>
             {statCards.map(({ label, value }) => (
               <StatCard key={label} label={label} value={value} />
             ))}
@@ -420,7 +429,7 @@ export default function Dashboard() {
                   <span style={{ fontSize: 15, fontWeight: 600, color: '#F5F4F0' }}>Recent Findings</span>
                   <Link to="/dashboard/reports" style={{ color: '#3B82F6', fontSize: 13, textDecoration: 'none' }}>View all →</Link>
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <table className="findings-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ backgroundColor: '#111110' }}>
                       {['SEVERITY', 'CATEGORY', 'FINDING', 'EST. SAVINGS'].map(col => (

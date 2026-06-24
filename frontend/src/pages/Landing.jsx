@@ -35,6 +35,23 @@ export default function Landing() {
   const [waitlistError, setWaitlistError] = useState('')
   const [waitlistLoading, setWaitlistLoading] = useState(false)
   const [waitlistFocused, setWaitlistFocused] = useState(false)
+  const [showContact, setShowContact] = useState(false)
+  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' })
+  const [contactSent, setContactSent] = useState(false)
+
+  const handleContactSubmit = async () => {
+    if (!contactForm.name || !contactForm.email) return
+    try {
+      await fetch('https://formspree.io/f/YOUR_FORM_ID', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ name: contactForm.name, email: contactForm.email, message: contactForm.message })
+      })
+      setContactSent(true)
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   async function handleWaitlist(e) {
     e.preventDefault()
@@ -345,11 +362,12 @@ export default function Landing() {
                 </li>
               ))}
             </ul>
-            <a href="#waitlist" style={{ display: 'block', boxSizing: 'border-box', padding: '11px 0', borderRadius: 7, fontSize: 14, fontWeight: 500, textAlign: 'center', background: 'transparent', color: '#F5F4F0', border: '1px solid #2A2A28', textDecoration: 'none', transition: 'all 150ms' }}
+            <button onClick={() => { setShowContact(true); setContactSent(false); setContactForm({ name: '', email: '', message: '' }) }}
+              style={{ display: 'block', width: '100%', boxSizing: 'border-box', padding: '11px 0', borderRadius: 7, fontSize: 14, fontWeight: 500, textAlign: 'center', background: 'transparent', color: '#F5F4F0', border: '1px solid #2A2A28', cursor: 'pointer', transition: 'all 150ms' }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = '#3A3A38'; e.currentTarget.style.background = '#161614' }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = '#2A2A28'; e.currentTarget.style.background = 'transparent' }}>
               Contact Us
-            </a>
+            </button>
           </div>
 
         </div>
@@ -383,6 +401,42 @@ export default function Landing() {
           </p>
         </div>
       </section>
+
+      {/* CONTACT MODAL */}
+      {showContact && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowContact(false) }}>
+          <div style={{ background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 12, padding: 32, width: '100%', maxWidth: 480, position: 'relative' }}>
+            <button onClick={() => setShowContact(false)}
+              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: '#6b7280', fontSize: 20, cursor: 'pointer' }}>×</button>
+            {contactSent ? (
+              <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                <span style={{ fontSize: 32, color: '#22c55e', marginBottom: 12, display: 'block' }}>✓</span>
+                <p style={{ fontSize: 18, fontWeight: 600, color: '#F5F4F0', marginBottom: 8 }}>Message sent!</p>
+                <p style={{ fontSize: 14, color: '#6b7280' }}>We'll be in touch within 24 hours.</p>
+              </div>
+            ) : (
+              <>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#F5F4F0', marginBottom: 8 }}>Get in touch</h2>
+                <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>Tell us about your AWS environment and we'll get back to you within 24 hours.</p>
+                <input type="text" placeholder="Your name" value={contactForm.name}
+                  onChange={e => setContactForm(p => ({ ...p, name: e.target.value }))}
+                  style={{ width: '100%', background: '#111110', border: '1px solid #2a2a28', borderRadius: 6, padding: '10px 14px', color: '#F5F4F0', fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none' }} />
+                <input type="email" placeholder="Work email" value={contactForm.email}
+                  onChange={e => setContactForm(p => ({ ...p, email: e.target.value }))}
+                  style={{ width: '100%', background: '#111110', border: '1px solid #2a2a28', borderRadius: 6, padding: '10px 14px', color: '#F5F4F0', fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none' }} />
+                <textarea placeholder="Tell us about your AWS setup — number of accounts, rough monthly spend, main services used." rows={4}
+                  value={contactForm.message} onChange={e => setContactForm(p => ({ ...p, message: e.target.value }))}
+                  style={{ width: '100%', background: '#111110', border: '1px solid #2a2a28', borderRadius: 6, padding: '10px 14px', color: '#F5F4F0', fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none', resize: 'vertical' }} />
+                <button onClick={handleContactSubmit}
+                  style={{ width: '100%', background: '#3B82F6', color: 'white', border: 'none', borderRadius: 6, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 4 }}>
+                  Send Message →
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* FOOTER */}
       <footer className="footer" style={{ padding: '2rem 2.5rem', borderTop: '1px solid #1E1E1C', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
