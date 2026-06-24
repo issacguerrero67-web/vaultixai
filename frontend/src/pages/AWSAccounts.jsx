@@ -24,6 +24,7 @@ export default function AWSAccounts() {
   const [loading, setLoading] = useState(true)
   const [signingOut, setSigningOut] = useState(false)
   const [userEmail, setUserEmail] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const [userId, setUserId] = useState('')
   const [accounts, setAccounts] = useState([])
   const [confirmingDisconnect, setConfirmingDisconnect] = useState(null)
@@ -35,6 +36,9 @@ export default function AWSAccounts() {
 
       setUserEmail(user.email)
       setUserId(user.id)
+
+      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single()
+      if (profile?.full_name) setDisplayName(profile.full_name)
 
       const { data } = await supabase
         .from('aws_accounts')
@@ -130,9 +134,20 @@ export default function AWSAccounts() {
         </nav>
 
         <div style={{ padding: '16px 20px', borderTop: '1px solid #1E1E1C' }}>
-          <div style={{ fontSize: 12, color: '#666662', marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {userEmail}
-          </div>
+          {displayName ? (
+            <>
+              <div style={{ fontSize: 13, color: '#F5F4F0', fontWeight: 500, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {displayName}
+              </div>
+              <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {userEmail}
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: 12, color: '#666662', marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {userEmail}
+            </div>
+          )}
           <button
             onClick={handleSignOut}
             disabled={signingOut}

@@ -37,6 +37,7 @@ export default function Dashboard() {
   const location = useLocation()
 
   const [userEmail, setUserEmail] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const [loading, setLoading] = useState(true)
   const [signingOut, setSigningOut] = useState(false)
   const [runningAudit, setRunningAudit] = useState(false)
@@ -63,7 +64,7 @@ export default function Dashboard() {
       if (!session) { navigate('/login'); return }
       setUserEmail(session.user.email)
 
-      const [accountsRes, reportsCountRes, latestReportRes] = await Promise.all([
+      const [accountsRes, reportsCountRes, latestReportRes, profileRes] = await Promise.all([
         supabase.from('aws_accounts').select('id').eq('user_id', session.user.id).limit(1),
         supabase.from('audit_reports').select('id', { count: 'exact', head: true }).eq('user_id', session.user.id),
         supabase
@@ -74,11 +75,13 @@ export default function Dashboard() {
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase.from('profiles').select('full_name').eq('id', session.user.id).single(),
       ])
 
       setAwsConnected(!!(accountsRes.data && accountsRes.data.length > 0))
       setReportCount(reportsCountRes.count ?? 0)
       setLatestReport(latestReportRes.data ?? null)
+      if (profileRes.data?.full_name) setDisplayName(profileRes.data.full_name)
       setLoading(false)
     }
     init()
@@ -225,13 +228,20 @@ export default function Dashboard() {
         </nav>
 
         <div style={{ padding: '16px 20px', borderTop: '1px solid #1E1E1C' }}>
-          <div style={{
-            fontSize: '12px', color: '#666662',
-            marginBottom: '10px',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }}>
-            {userEmail}
-          </div>
+          {displayName ? (
+            <>
+              <div style={{ fontSize: 13, color: '#F5F4F0', fontWeight: 500, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {displayName}
+              </div>
+              <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {userEmail}
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: '12px', color: '#666662', marginBottom: '10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {userEmail}
+            </div>
+          )}
           <button
             onClick={handleSignOut}
             disabled={signingOut}

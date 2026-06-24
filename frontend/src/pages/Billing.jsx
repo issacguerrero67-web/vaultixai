@@ -27,6 +27,7 @@ export default function Billing() {
   const [checkoutLoading, setCheckoutLoading] = useState(null) // 'standard' | 'team' | null
   const [savingsAmount, setSavingsAmount] = useState(0)
   const [reportDate, setReportDate] = useState(null)
+  const [displayName, setDisplayName] = useState('')
   const [showContact, setShowContact] = useState(false)
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' })
   const [contactSent, setContactSent] = useState(false)
@@ -72,6 +73,9 @@ export default function Billing() {
         setSavingsAmount(latestReport.total_savings || 0)
         setReportDate(new Date(latestReport.created_at).toLocaleDateString())
       }
+
+      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', session.user.id).single()
+      if (profile?.full_name) setDisplayName(profile.full_name)
 
       setLoading(false)
     }
@@ -174,9 +178,20 @@ export default function Billing() {
           })}
         </nav>
         <div style={{ padding: '16px 20px', borderTop: '1px solid #1E1E1C' }}>
-          <div style={{ fontSize: 12, color: '#666662', marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {userEmail}
-          </div>
+          {displayName ? (
+            <>
+              <div style={{ fontSize: 13, color: '#F5F4F0', fontWeight: 500, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {displayName}
+              </div>
+              <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {userEmail}
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: 12, color: '#666662', marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {userEmail}
+            </div>
+          )}
           <button
             onClick={handleSignOut}
             disabled={signingOut}

@@ -41,6 +41,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(true)
   const [runningAudit, setRunningAudit] = useState(false)
   const [userEmail, setUserEmail] = useState('')
+  const [displayName, setDisplayName] = useState('')
   const [signingOut, setSigningOut] = useState(false)
   const [report, setReport] = useState(null)
   const [accountName, setAccountName] = useState('')
@@ -63,8 +64,8 @@ export default function Reports() {
 
       setUserEmail(session.user.email)
 
-      // Fetch most recent report and account in parallel
-      const [{ data: reports }, { data: accounts }] = await Promise.all([
+      // Fetch most recent report, account, and profile in parallel
+      const [{ data: reports }, { data: accounts }, { data: profile }] = await Promise.all([
         supabase
           .from('audit_reports')
           .select('*')
@@ -76,10 +77,12 @@ export default function Reports() {
           .select('account_name')
           .eq('user_id', session.user.id)
           .limit(1),
+        supabase.from('profiles').select('full_name').eq('id', session.user.id).single(),
       ])
 
       if (reports?.length) setReport(reports[0])
       if (accounts?.length) setAccountName(accounts[0].account_name || 'My AWS Account')
+      if (profile?.full_name) setDisplayName(profile.full_name)
       setLoading(false)
     }
     init()
@@ -171,9 +174,20 @@ export default function Reports() {
           ))}
         </nav>
         <div style={{ padding: '16px 20px', borderTop: '1px solid #1E1E1C' }}>
-          <div style={{ fontSize: 12, color: '#666662', marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {userEmail}
-          </div>
+          {displayName ? (
+            <>
+              <div style={{ fontSize: 13, color: '#F5F4F0', fontWeight: 500, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {displayName}
+              </div>
+              <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {userEmail}
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: 12, color: '#666662', marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {userEmail}
+            </div>
+          )}
           <button
             onClick={handleSignOut}
             disabled={signingOut}
@@ -284,6 +298,11 @@ export default function Reports() {
                     <p style={{ fontSize: 13, color: '#666662', margin: 0 }}>
                       {accountName}{accountName && auditDate ? ' · ' : ''}{auditDate}
                     </p>
+                    {displayName && (
+                      <div style={{ fontSize: 13, color: '#6b7280', marginTop: 4 }}>
+                        Prepared for <span style={{ color: '#F5F4F0', fontWeight: 500 }}>{displayName}</span>
+                      </div>
+                    )}
                   </div>
                   <div style={{
                     backgroundColor: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)',
