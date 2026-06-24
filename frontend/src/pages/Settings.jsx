@@ -79,7 +79,7 @@ export default function Settings() {
   const [disconnectError, setDisconnectError] = useState('')
 
   // Plan
-  const [plan, setPlan] = useState('free')
+  const [plan, setPlan] = useState('standard')
 
   useEffect(() => {
     async function init() {
@@ -96,7 +96,7 @@ export default function Settings() {
 
       if (profileRes.data) {
         setDisplayName(profileRes.data.full_name ?? '')
-        setPlan(profileRes.data.plan ?? 'free')
+        setPlan(profileRes.data.plan ?? 'standard')
       }
       if (accountsRes.data) {
         setAwsAccounts(accountsRes.data)
@@ -153,7 +153,7 @@ export default function Settings() {
     navigate('/login')
   }
 
-  const PLAN_LABELS = { free: 'Free', pro: 'Standard', team: 'Team', enterprise: 'Enterprise' }
+  const PLAN_LABELS = { standard: 'Standard', team: 'Team', enterprise: 'Enterprise' }
 
   if (loading) {
     return (

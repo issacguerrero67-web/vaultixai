@@ -112,7 +112,7 @@ export default function Login() {
             <Link to="/signup" style={{ color: '#3B82F6', textDecoration: 'none' }}
               onMouseEnter={e => e.target.style.textDecoration = 'underline'}
               onMouseLeave={e => e.target.style.textDecoration = 'none'}>
-              Start your free trial
+              Create an account
             </Link>
           </p>
 

@@ -156,7 +156,7 @@ export default function Landing() {
             }}
               onMouseEnter={e => { e.currentTarget.style.background = '#E5E4E0'; e.currentTarget.style.transform = 'translateY(-1px)' }}
               onMouseLeave={e => { e.currentTarget.style.background = '#F5F4F0'; e.currentTarget.style.transform = 'translateY(0)' }}>
-              Get Started Free
+              Get Started
             </Link>
             <a href="#process" className="hero-btn" style={{
               background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)',
@@ -372,7 +372,7 @@ export default function Landing() {
           }}
             onMouseEnter={e => { e.currentTarget.style.background = '#2563EB'; e.currentTarget.style.transform = 'translateY(-1px)' }}
             onMouseLeave={e => { e.currentTarget.style.background = '#3B82F6'; e.currentTarget.style.transform = 'translateY(0)' }}>
-            Get Started Free →
+            Start Finding Savings →
           </Link>
           <p style={{ fontSize: 13, color: '#555552', marginTop: '1.25rem' }}>
             Already have an account?{' '}
@@ -393,7 +393,7 @@ export default function Landing() {
               onMouseEnter={e => e.target.style.color = '#888884'}
               onMouseLeave={e => e.target.style.color = '#555552'}>{l}</a>
           ))}
-          <a href="mailto:issacguerrero67@gmail.com" style={{ fontSize: 13, color: '#555552', textDecoration: 'none', transition: 'color 150ms' }}
+          <a href="mailto:hello@vaultixai.app" style={{ fontSize: 13, color: '#555552', textDecoration: 'none', transition: 'color 150ms' }}
             onMouseEnter={e => e.target.style.color = '#888884'}
             onMouseLeave={e => e.target.style.color = '#555552'}>Contact</a>
         </div>

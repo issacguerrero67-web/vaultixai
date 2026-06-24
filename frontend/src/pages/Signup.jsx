@@ -112,7 +112,7 @@ export default function Signup() {
             fontSize: '28px', fontWeight: 700, letterSpacing: '-0.03em',
             color: '#F5F4F0', margin: '0 0 8px',
           }}>
-            Start your free trial
+            Create your account
           </h1>
 
           {/* Subtext */}

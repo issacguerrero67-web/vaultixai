@@ -77,7 +77,7 @@ export default function Billing() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ savingsAmount: effectiveSavings, tier }),
+        body: JSON.stringify({ tier }),
       })
       const data = await res.json()
       if (data.url) {
@@ -202,7 +202,7 @@ export default function Billing() {
                 </h2>
               </div>
               <p style={{ color: '#6B7280', fontSize: 14, margin: 0 }}>
-                Your subscription is active. You're on the {status.tier} plan — {status.tier === 'team' ? '15%' : '20%'} of verified monthly savings.
+                Your plan is active. You're on the {status.tier} plan — {status.tier === 'team' ? '15%' : '20%'} of verified monthly savings.
               </p>
             </div>
           ) : (
