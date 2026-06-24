@@ -17,6 +17,16 @@ const NAV_ITEMS = [
   { label: 'Settings',    icon: '⊙', path: '/dashboard/settings' },
 ]
 
+const CATEGORY_ICONS = {
+  'EC2': '🖥',
+  'RDS': '🗄',
+  'S3': '🪣',
+  'EBS': '💾',
+  'Network': '🌐',
+  'SavingsPlans': '💰',
+  'General': '⚙️',
+}
+
 const SEV_COLOR  = { high: '#EF4444', medium: '#F59E0B', low: '#6B7280' }
 const SEV_BG     = { high: 'rgba(239,68,68,0.1)', medium: 'rgba(245,158,11,0.1)', low: 'rgba(107,114,128,0.1)' }
 const SEV_ORDER  = { high: 0, medium: 1, low: 2 }
@@ -314,11 +324,11 @@ export default function Reports() {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 20, paddingTop: 20, borderTop: '1px solid #1E1E1C' }}>
-                  <Stat label="Findings" value={sortedFindings.length} isMobile={isMobile} />
-                  <Stat label="High severity" value={sortedFindings.filter(f => f.severity === 'high').length} valueColor="#EF4444" isMobile={isMobile} />
-                  <Stat label="Medium severity" value={sortedFindings.filter(f => f.severity === 'medium').length} valueColor="#F59E0B" isMobile={isMobile} />
-                  <Stat label="Low severity" value={sortedFindings.filter(f => f.severity === 'low').length} valueColor="#6B7280" isMobile={isMobile} />
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 20, paddingTop: 20, borderTop: '1px solid #1E1E1C', alignItems: 'end' }}>
+                  <Stat label="Total" value={sortedFindings.length} isMobile={isMobile} />
+                  <Stat label="High" value={sortedFindings.filter(f => f.severity === 'high').length} valueColor="#EF4444" isMobile={isMobile} />
+                  <Stat label="Medium" value={sortedFindings.filter(f => f.severity === 'medium').length} valueColor="#F59E0B" isMobile={isMobile} />
+                  <Stat label="Low" value={sortedFindings.filter(f => f.severity === 'low').length} valueColor="#6B7280" isMobile={isMobile} />
                 </div>
               </div>
 
@@ -472,7 +482,7 @@ function FindingCard({ finding, expanded, onToggle, isMobile }) {
               textTransform: 'uppercase', padding: '3px 9px', borderRadius: 4,
               border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0,
             }}>
-              {finding.category}
+              {CATEGORY_ICONS[finding.category] || '⚙️'} {finding.category}
             </span>
           )}
           <span style={{ fontSize: 15, fontWeight: 600, color: '#F5F4F0', marginLeft: 8, letterSpacing: '-0.01em', minWidth: 0, whiteSpace: isMobile ? 'normal' : undefined }}>

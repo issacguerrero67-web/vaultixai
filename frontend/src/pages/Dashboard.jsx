@@ -26,6 +26,16 @@ function formatAuditDate(ts) {
   )
 }
 
+const CATEGORY_ICONS = {
+  'EC2': '🖥',
+  'RDS': '🗄',
+  'S3': '🪣',
+  'EBS': '💾',
+  'Network': '🌐',
+  'SavingsPlans': '💰',
+  'General': '⚙️',
+}
+
 const SEVERITY_STYLES = {
   high:   { background: 'rgba(239,68,68,0.15)',  color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)'  },
   medium: { background: 'rgba(245,158,11,0.15)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.3)' },
@@ -470,7 +480,9 @@ export default function Dashboard() {
                           </span>
                         </td>
                         <td style={{ padding: '14px 20px', fontSize: 14, color: '#9ca3af', verticalAlign: 'middle', display: isMobile ? 'none' : 'table-cell' }}>
-                          {finding.category}
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {CATEGORY_ICONS[finding.category] || '⚙️'} {finding.category}
+                          </span>
                         </td>
                         <td style={{ padding: '14px 20px', fontSize: 14, color: '#F5F4F0', verticalAlign: 'middle', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {finding.title}
