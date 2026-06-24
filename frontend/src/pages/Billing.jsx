@@ -31,6 +31,13 @@ export default function Billing() {
   const [showContact, setShowContact] = useState(false)
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' })
   const [contactSent, setContactSent] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const handleContactSubmit = async () => {
     if (!contactForm.name || !contactForm.email) return
@@ -136,7 +143,7 @@ export default function Billing() {
       {/* ── SIDEBAR ── */}
       <aside style={{
         width: 240, flexShrink: 0, backgroundColor: '#0D0D0D',
-        borderRight: '1px solid #1E1E1C', display: 'flex', flexDirection: 'column',
+        borderRight: '1px solid #1E1E1C', display: isMobile ? 'none' : 'flex', flexDirection: 'column',
         position: 'fixed', top: 0, left: 0, bottom: 0,
       }}>
         <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #1E1E1C' }}>
@@ -245,7 +252,7 @@ export default function Billing() {
       )}
 
       {/* ── MAIN ── */}
-      <main style={{ marginLeft: 240, flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <main style={{ marginLeft: isMobile ? 0 : 240, flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <div style={{
           padding: '20px 32px', borderBottom: '1px solid #1E1E1C',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -255,7 +262,7 @@ export default function Billing() {
           </h1>
         </div>
 
-        <div style={{ padding: 32, flex: 1, maxWidth: 720 }}>
+        <div style={{ padding: isMobile ? 16 : 32, flex: 1, maxWidth: 720 }}>
 
           {/* Active subscription */}
           {isActive ? (

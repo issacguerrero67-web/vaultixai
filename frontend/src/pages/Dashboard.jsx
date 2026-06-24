@@ -50,7 +50,7 @@ export default function Dashboard() {
   const [showWelcome, setShowWelcome] = useState(
     () => localStorage.getItem('vaultix_welcome_dismissed') !== 'true'
   )
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768)

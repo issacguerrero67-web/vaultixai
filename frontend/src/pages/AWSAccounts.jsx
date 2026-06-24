@@ -28,6 +28,13 @@ export default function AWSAccounts() {
   const [userId, setUserId] = useState('')
   const [accounts, setAccounts] = useState([])
   const [confirmingDisconnect, setConfirmingDisconnect] = useState(null)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     async function init() {
@@ -90,7 +97,7 @@ export default function AWSAccounts() {
       {/* ── SIDEBAR ── */}
       <aside style={{
         width: 240, flexShrink: 0, backgroundColor: '#0D0D0D',
-        borderRight: '1px solid #1E1E1C', display: 'flex', flexDirection: 'column',
+        borderRight: '1px solid #1E1E1C', display: isMobile ? 'none' : 'flex', flexDirection: 'column',
         position: 'fixed', top: 0, left: 0, bottom: 0,
       }}>
         <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid #1E1E1C' }}>
@@ -166,7 +173,7 @@ export default function AWSAccounts() {
       </aside>
 
       {/* ── MAIN ── */}
-      <main style={{ marginLeft: 240, flex: 1, padding: 32 }}>
+      <main style={{ marginLeft: isMobile ? 0 : 240, flex: 1, padding: isMobile ? 16 : 32 }}>
 
         {/* Page header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>

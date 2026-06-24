@@ -63,6 +63,13 @@ export default function Settings() {
 
   const [loading, setLoading] = useState(true)
   const [signingOut, setSigningOut] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
   const [userEmail, setUserEmail] = useState('')
   const [userId, setUserId] = useState('')
 
@@ -185,7 +192,7 @@ export default function Settings() {
         flexShrink: 0,
         backgroundColor: '#0D0D0D',
         borderRight: '1px solid #1E1E1C',
-        display: 'flex',
+        display: isMobile ? 'none' : 'flex',
         flexDirection: 'column',
         position: 'fixed',
         top: 0,
@@ -251,7 +258,7 @@ export default function Settings() {
       </aside>
 
       {/* ── MAIN ── */}
-      <main style={{ marginLeft: '240px', flex: 1, padding: '32px', maxWidth: '720px' }}>
+      <main style={{ marginLeft: isMobile ? 0 : '240px', flex: 1, padding: isMobile ? '16px' : '32px', maxWidth: '720px' }}>
 
         <div style={{ marginBottom: '28px' }}>
           <h1 style={{ fontSize: '18px', fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
