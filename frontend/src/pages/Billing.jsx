@@ -279,7 +279,7 @@ export default function Billing() {
                 </h2>
               </div>
               <p style={{ color: '#6B7280', fontSize: 14, margin: 0 }}>
-                Your plan is active. You're on the {status.tier} plan — {status.tier === 'team' ? '15%' : '20%'} of verified monthly savings.
+                Your plan is active. You're on the {status.tier} plan — {status.tier === 'team' ? '15%' : status.tier === 'autopilot' ? '35%' : '20%'} of verified monthly savings.
               </p>
             </div>
           ) : (
@@ -430,6 +430,64 @@ export default function Billing() {
                     onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
                   >
                     {checkoutLoading === 'team' ? 'Redirecting…' : !hasAudit ? 'Run an audit first' : 'Start Team Plan (15% of savings)'}
+                  </button>
+                </div>
+
+                {/* Autopilot */}
+                <div style={{
+                  background: '#1a1a18', border: '1px solid rgba(251,191,36,0.3)',
+                  borderRadius: 8, padding: 24, position: 'relative',
+                }}>
+                  <span style={{
+                    position: 'absolute', top: -10, left: 20,
+                    background: '#f59e0b', color: '#000',
+                    borderRadius: 4, padding: '2px 10px', fontSize: 11, fontWeight: 700,
+                  }}>
+                    AUTOPILOT
+                  </span>
+
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 20, fontWeight: 700, color: '#F5F4F0' }}>Autopilot</span>
+                    <span style={{ fontSize: 14, color: '#6b7280' }}>— Automated execution</span>
+                  </div>
+                  <p style={{ margin: '0 0 4px' }}>
+                    <span style={{ fontSize: 32, fontWeight: 700, color: '#F5F4F0' }}>35%</span>
+                    {' '}<span style={{ fontSize: 14, color: '#6b7280' }}>of verified savings</span>
+                  </p>
+                  <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16, margin: '0 0 16px' }}>
+                    Vaultix executes approved fixes automatically
+                  </p>
+
+                  <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {[
+                      'Everything in Team',
+                      'Automated fix execution',
+                      'Pre-deletion snapshots',
+                      'One-click rollback',
+                      'Full audit log',
+                    ].map(f => (
+                      <li key={f} style={{ fontSize: 13, color: '#888884', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ color: '#f59e0b', fontSize: 12 }}>✓</span>{f}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button
+                    onClick={() => startCheckout('autopilot')}
+                    disabled={!!checkoutLoading || !hasAudit}
+                    style={{
+                      background: checkoutLoading === 'autopilot' ? '#d97706' : '#f59e0b',
+                      color: '#000', border: 'none', borderRadius: 6,
+                      padding: '12px 20px', fontSize: 14, fontWeight: 600,
+                      cursor: (checkoutLoading || !hasAudit) ? 'not-allowed' : 'pointer',
+                      opacity: (checkoutLoading && checkoutLoading !== 'autopilot') || !hasAudit ? 0.4 : 1,
+                      width: '100%', marginTop: 0,
+                      transition: 'transform 150ms, box-shadow 150ms',
+                    }}
+                    onMouseEnter={e => { if (!checkoutLoading && hasAudit) { e.currentTarget.style.transform = 'scale(1.01)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(251,191,36,0.35)' } }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
+                  >
+                    {checkoutLoading === 'autopilot' ? 'Redirecting…' : !hasAudit ? 'Run an audit first' : 'Start Autopilot Plan (35% of savings)'}
                   </button>
                 </div>
 

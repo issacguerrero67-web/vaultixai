@@ -11,7 +11,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 )
 
-const TIER_RATES = { standard: 0.20, team: 0.15 }
+const TIER_RATES = { standard: 0.20, team: 0.15, autopilot: 0.35 }
 
 // POST /api/stripe/webhook — raw body, no auth
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -52,7 +52,7 @@ router.post('/create-checkout', async (req, res, next) => {
     const { tier } = req.body
 
     if (!tier || !TIER_RATES[tier]) {
-      return res.status(400).json({ error: 'A valid tier (standard or team) is required.' })
+      return res.status(400).json({ error: 'A valid tier (standard, team, or autopilot) is required.' })
     }
 
     // Fetch savings server-side — never trust client-supplied amount
