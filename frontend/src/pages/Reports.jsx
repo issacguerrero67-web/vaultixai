@@ -60,6 +60,9 @@ export default function Reports() {
   const paymentSuccess = searchParams.get('payment') === 'success'
   const [expandedFindings, setExpandedFindings] = useState({})
   const [allExpanded, setAllExpanded] = useState(false)
+  const [showContact, setShowContact] = useState(false)
+  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' })
+  const [contactSent, setContactSent] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
   useEffect(() => {
@@ -98,6 +101,20 @@ export default function Reports() {
     }
     init()
   }, [navigate])
+
+  async function handleContactSubmit() {
+    if (!contactForm.name || !contactForm.email) return
+    try {
+      await fetch('https://formspree.io/f/xwvdvzbp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ name: contactForm.name, email: contactForm.email, message: contactForm.message }),
+      })
+      setContactSent(true)
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   async function handleSignOut() {
     setSigningOut(true)
@@ -161,6 +178,42 @@ export default function Reports() {
       minHeight: '100vh', display: 'flex',
       overflowX: 'hidden', width: '100%', maxWidth: '100vw',
     }}>
+
+      {/* ── CONTACT MODAL ── */}
+      {showContact && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowContact(false) }}>
+          <div style={{ background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 12, padding: 32, width: '100%', maxWidth: 480, position: 'relative', margin: '0 16px' }}>
+            <button onClick={() => setShowContact(false)}
+              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: '#6b7280', fontSize: 20, cursor: 'pointer' }}>×</button>
+            {contactSent ? (
+              <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                <span style={{ fontSize: 32, color: '#22c55e', marginBottom: 12, display: 'block' }}>✓</span>
+                <p style={{ fontSize: 18, fontWeight: 600, color: '#F5F4F0', marginBottom: 8 }}>Message sent!</p>
+                <p style={{ fontSize: 14, color: '#6b7280' }}>We'll be in touch within 24 hours.</p>
+              </div>
+            ) : (
+              <>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#F5F4F0', marginBottom: 8 }}>Talk to an Expert</h2>
+                <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>We'll review your findings and help implement the fixes. You only pay a percentage of what we actually save you.</p>
+                <input type="text" placeholder="Your name" value={contactForm.name}
+                  onChange={e => setContactForm(p => ({ ...p, name: e.target.value }))}
+                  style={{ width: '100%', background: '#111110', border: '1px solid #2a2a28', borderRadius: 6, padding: '10px 14px', color: '#F5F4F0', fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none' }} />
+                <input type="email" placeholder="Work email" value={contactForm.email}
+                  onChange={e => setContactForm(p => ({ ...p, email: e.target.value }))}
+                  style={{ width: '100%', background: '#111110', border: '1px solid #2a2a28', borderRadius: 6, padding: '10px 14px', color: '#F5F4F0', fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none' }} />
+                <textarea rows={4} value={contactForm.message}
+                  onChange={e => setContactForm(p => ({ ...p, message: e.target.value }))}
+                  style={{ width: '100%', background: '#111110', border: '1px solid #2a2a28', borderRadius: 6, padding: '10px 14px', color: '#F5F4F0', fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none', resize: 'vertical' }} />
+                <button onClick={handleContactSubmit}
+                  style={{ width: '100%', background: '#3B82F6', color: 'white', border: 'none', borderRadius: 6, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 4 }}>
+                  Send Message →
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── SIDEBAR ── */}
       <aside style={{
@@ -390,21 +443,24 @@ export default function Reports() {
                     Our team can handle the remediation — you only pay a percentage of what we save you.
                   </p>
                 </div>
-                <a
-                  href="mailto:issacguerrero67@gmail.com?subject=Vaultix AI - Implementation Help&body=Hi, I'd like help implementing the cost optimization findings from my Vaultix AI audit."
+                <button
+                  onClick={() => {
+                    setContactSent(false)
+                    setContactForm({
+                      name: displayName || '',
+                      email: userEmail || '',
+                      message: `I have ${sortedFindings.length} findings in my AWS Cost Audit Report with potential savings of $${totalSavings.toLocaleString()}/mo. I'd like help implementing the fixes.`,
+                    })
+                    setShowContact(true)
+                  }}
                   style={{
-                    background: '#3B82F6',
-                    color: '#fff',
-                    padding: '12px 24px',
-                    borderRadius: 8,
-                    textDecoration: 'none',
-                    fontWeight: 600,
-                    fontSize: 14,
-                    whiteSpace: 'nowrap',
+                    background: '#3B82F6', color: '#fff', border: 'none',
+                    padding: '12px 24px', borderRadius: 8,
+                    fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap', cursor: 'pointer',
                   }}
                 >
                   Talk to an Expert →
-                </a>
+                </button>
               </div>
             </>
           )}

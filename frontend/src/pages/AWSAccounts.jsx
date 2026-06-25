@@ -28,6 +28,7 @@ export default function AWSAccounts() {
   const [displayName, setDisplayName] = useState('')
   const [userId, setUserId] = useState('')
   const [accounts, setAccounts] = useState([])
+  const [userPlan, setUserPlan] = useState(null)
   const [confirmingDisconnect, setConfirmingDisconnect] = useState(null)
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
 
@@ -45,8 +46,9 @@ export default function AWSAccounts() {
       setUserEmail(user.email)
       setUserId(user.id)
 
-      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single()
+      const { data: profile } = await supabase.from('profiles').select('full_name, plan').eq('id', user.id).single()
       if (profile?.full_name) setDisplayName(profile.full_name)
+      if (profile?.plan) setUserPlan(profile.plan)
 
       const { data } = await supabase
         .from('aws_accounts')
@@ -74,6 +76,10 @@ export default function AWSAccounts() {
 
   function formatDate(ts) {
     return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
+
+  function extractAccountId(roleArn) {
+    return roleArn?.match(/::(\d+):/)?.[1] ?? null
   }
 
   if (loading) {
@@ -178,23 +184,53 @@ export default function AWSAccounts() {
       <main style={{ marginLeft: isMobile ? 0 : 240, flex: 1, padding: isMobile ? '16px 16px 70px' : 32, minWidth: 0, overflowX: 'hidden' }}>
 
         {/* Page header */}
-        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: 12, marginBottom: 28 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
-            AWS Accounts
-          </h1>
-          <button
-            onClick={() => navigate('/dashboard/connect')}
-            style={{
-              background: '#3B82F6', color: 'white', border: 'none',
-              borderRadius: 6, padding: '10px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-              transition: 'background 150ms', width: isMobile ? '100%' : undefined,
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = '#2563EB'}
-            onMouseLeave={e => e.currentTarget.style.background = '#3B82F6'}
-          >
-            Connect New Account
-          </button>
-        </div>
+        {(() => {
+          const maxAccounts = (userPlan === 'team' || userPlan === 'enterprise') ? Infinity : 3
+          const atLimit = accounts.length >= maxAccounts
+          return (
+            <>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: 12, marginBottom: atLimit ? 16 : 28 }}>
+                <h1 style={{ fontSize: 24, fontWeight: 700, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
+                  AWS Accounts
+                  <span style={{ fontSize: 13, fontWeight: 400, color: '#6b7280', marginLeft: 12 }}>
+                    {accounts.length}{maxAccounts === Infinity ? '' : `/${maxAccounts}`}
+                  </span>
+                </h1>
+                <button
+                  onClick={() => !atLimit && navigate('/dashboard/connect')}
+                  disabled={atLimit}
+                  style={{
+                    background: atLimit ? '#1a1a18' : '#3B82F6',
+                    color: atLimit ? '#555552' : 'white',
+                    border: atLimit ? '1px solid #2a2a28' : 'none',
+                    borderRadius: 6, padding: '10px 18px', fontSize: 14, fontWeight: 600,
+                    cursor: atLimit ? 'not-allowed' : 'pointer',
+                    transition: 'background 150ms', width: isMobile ? '100%' : undefined,
+                  }}
+                  onMouseEnter={e => { if (!atLimit) e.currentTarget.style.background = '#2563EB' }}
+                  onMouseLeave={e => { if (!atLimit) e.currentTarget.style.background = '#3B82F6' }}
+                >
+                  Connect New Account
+                </button>
+              </div>
+
+              {atLimit && userPlan === 'standard' && (
+                <div style={{
+                  background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+                  borderRadius: 8, padding: '14px 20px', marginBottom: 24,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+                }}>
+                  <span style={{ fontSize: 14, color: '#9CA3AF' }}>
+                    You've reached the 3-account limit on the Standard plan.
+                  </span>
+                  <a href="/dashboard/billing" style={{ fontSize: 13, fontWeight: 600, color: '#F59E0B', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                    Upgrade to Team →
+                  </a>
+                </div>
+              )}
+            </>
+          )
+        })()}
 
         {/* Empty state */}
         {accounts.length === 0 ? (
@@ -236,10 +272,14 @@ export default function AWSAccounts() {
                   <span style={{ fontSize: 12, color: '#6b7280', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap', wordBreak: isMobile ? 'break-all' : undefined, maxWidth: isMobile ? '100%' : 420 }}>
                     {account.role_arn}
                   </span>
-                  <span style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
+                  <span style={{ fontSize: 12, color: '#555552', marginTop: 6 }}>
+                    {extractAccountId(account.role_arn) && (
+                      <span>Account ID: {extractAccountId(account.role_arn)} · </span>
+                    )}
+                    Connected: {formatDate(account.created_at)}
                     {account.last_audit_at
-                      ? 'Last audit: ' + formatDate(account.last_audit_at)
-                      : 'No audit run yet'}
+                      ? ' · Last audit: ' + formatDate(account.last_audit_at)
+                      : ' · No audit run yet'}
                   </span>
                 </div>
 

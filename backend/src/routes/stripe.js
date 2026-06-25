@@ -134,4 +134,29 @@ router.get('/status', async (req, res) => {
   }
 })
 
+// GET /api/stripe/invoices
+router.get('/invoices', async (req, res) => {
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('stripe_customer_id')
+      .eq('id', req.user.id)
+      .single()
+
+    if (!profile?.stripe_customer_id) {
+      return res.json({ invoices: [] })
+    }
+
+    const invoices = await stripe.invoices.list({
+      customer: profile.stripe_customer_id,
+      limit: 10,
+    })
+
+    res.json({ invoices: invoices.data })
+  } catch (err) {
+    console.error('Invoices error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 export default router

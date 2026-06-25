@@ -29,6 +29,7 @@ export default function Billing() {
   const [savingsAmount, setSavingsAmount] = useState(0)
   const [reportDate, setReportDate] = useState(null)
   const [displayName, setDisplayName] = useState('')
+  const [invoices, setInvoices] = useState([])
   const [showContact, setShowContact] = useState(false)
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' })
   const [contactSent, setContactSent] = useState(false)
@@ -67,6 +68,18 @@ export default function Billing() {
         if (res.ok) setStatus(await res.json())
       } catch (err) {
         console.error('Failed to fetch billing status:', err)
+      }
+
+      try {
+        const invRes = await fetch(`${import.meta.env.VITE_API_URL}/api/stripe/invoices`, {
+          headers: { 'Authorization': `Bearer ${session.access_token}` },
+        })
+        if (invRes.ok) {
+          const invData = await invRes.json()
+          setInvoices(invData.invoices ?? [])
+        }
+      } catch (err) {
+        console.error('Failed to fetch invoices:', err)
       }
 
       const { data: latestReport } = await supabase
@@ -266,83 +279,103 @@ export default function Billing() {
 
         <div style={{ padding: isMobile ? '16px 16px 70px' : 32, flex: 1, maxWidth: 720 }}>
 
-          {/* Active subscription */}
-          {isActive ? (
+          {/* ── CURRENT PLAN CARD (active subscribers only) ── */}
+          {isActive && (
             <div style={{
-              backgroundColor: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.25)',
-              borderRadius: 12, padding: '28px 32px',
+              backgroundColor: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)',
+              borderRadius: 12, padding: '24px 28px', marginBottom: 32,
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <span style={{ fontSize: 18, color: '#34D399' }}>✓</span>
-                <h2 style={{ fontSize: 18, fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
-                  Active {status.tier?.charAt(0).toUpperCase() + status.tier?.slice(1)} Plan
-                </h2>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 16, color: '#34D399' }}>✓</span>
+                  <h2 style={{ fontSize: 17, fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
+                    {status.tier === 'team' ? 'Team Plan' : 'Standard Plan'}
+                  </h2>
+                </div>
+                <span style={{
+                  background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)',
+                  color: '#22c55e', borderRadius: 20, padding: '3px 12px', fontSize: 12, fontWeight: 600,
+                }}>
+                  Active
+                </span>
               </div>
-              <p style={{ color: '#6B7280', fontSize: 14, margin: 0 }}>
-                Your plan is active. You're on the {status.tier === 'team' ? 'Team Plan — 15%' : 'Standard Plan — 20%'} of verified monthly savings.
-              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 1fr 1fr', gap: 16 }}>
+                {[
+                  { label: 'RATE', value: status.tier === 'team' ? '15% of savings' : '20% of savings' },
+                  { label: 'BILLING CYCLE', value: 'Monthly' },
+                  { label: 'AUTOPILOT', value: 'Included ✦' },
+                ].map(({ label, value }) => (
+                  <div key={label}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', color: '#6B7280', marginBottom: 4 }}>{label}</div>
+                    <div style={{ fontSize: 14, fontWeight: 500, color: '#F5F4F0' }}>{value}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ) : (
-            <>
-              <div style={{ marginBottom: 28 }}>
-                <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.03em', color: '#F5F4F0', margin: '0 0 8px' }}>
-                  Plans & Billing
-                </h2>
-                <p style={{ color: '#6B7280', fontSize: 14, margin: 0, lineHeight: 1.7 }}>
-                  Success-based pricing — we only charge when we save you money.
-                </p>
+          )}
+
+          {/* ── SECTION HEADING ── */}
+          <div style={{ marginBottom: 24 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.03em', color: '#F5F4F0', margin: '0 0 6px' }}>
+              {isActive ? 'Change Plan' : 'Plans & Billing'}
+            </h2>
+            <p style={{ color: '#6B7280', fontSize: 14, margin: 0, lineHeight: 1.7 }}>
+              {isActive
+                ? 'Switch plans at any time. Changes take effect on your next billing cycle.'
+                : 'Success-based pricing — we only charge when we save you money.'}
+            </p>
+          </div>
+
+          {/* ── AUDIT BANNER (non-active users only) ── */}
+          {!isActive && (
+            !hasAudit ? (
+              <div style={{
+                background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+                borderRadius: 8, padding: '16px 20px', marginBottom: 24, fontSize: 14, color: '#9CA3AF',
+              }}>
+                ⚠️ No audit found.{' '}
+                <a href="/dashboard" style={{ color: '#3B82F6' }}>Run an audit first</a>
+                {' '}to see your potential savings before choosing a plan.
               </div>
+            ) : savingsAmount > 0 ? (
+              <div style={{
+                background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)',
+                borderRadius: 8, padding: '16px 20px', marginBottom: 24, fontSize: 14, color: '#9CA3AF',
+              }}>
+                Based on your last audit ({reportDate}), we identified{' '}
+                <span style={{ color: '#22C55E', fontWeight: 600 }}>${savingsAmount.toLocaleString()}/mo</span>{' '}
+                in potential savings.
+              </div>
+            ) : (
+              <div style={{
+                background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)',
+                borderRadius: 8, padding: '14px 18px', marginBottom: 24,
+                display: 'flex', alignItems: 'flex-start', gap: 12,
+              }}>
+                <span style={{ color: '#3B82F6', fontSize: 16, marginTop: 1 }}>ℹ</span>
+                <span style={{ color: '#9ca3af', fontSize: 14, lineHeight: 1.5 }}>
+                  You only pay when we find real savings. Your plan activates automatically after your first audit identifies waste in your AWS account.
+                </span>
+              </div>
+            )
+          )}
 
-              {!hasAudit ? (
-                <div style={{
-                  background: 'rgba(245,158,11,0.08)',
-                  border: '1px solid rgba(245,158,11,0.2)',
-                  borderRadius: 8, padding: '16px 20px', marginBottom: 24,
-                  fontSize: 14, color: '#9CA3AF',
-                }}>
-                  ⚠️ No audit found.{' '}
-                  <a href="/dashboard" style={{ color: '#3B82F6' }}>Run an audit first</a>
-                  {' '}to see your potential savings before choosing a plan.
-                </div>
-              ) : savingsAmount > 0 ? (
-                <div style={{
-                  background: 'rgba(59,130,246,0.08)',
-                  border: '1px solid rgba(59,130,246,0.2)',
-                  borderRadius: 8, padding: '16px 20px', marginBottom: 24,
-                  fontSize: 14, color: '#9CA3AF',
-                }}>
-                  Based on your last audit ({reportDate}), we identified{' '}
-                  <span style={{ color: '#22C55E', fontWeight: 600 }}>
-                    ${savingsAmount.toLocaleString()}/mo
-                  </span>{' '}
-                  in potential savings.
-                </div>
-              ) : (
-                <div style={{
-                  background: 'rgba(59,130,246,0.08)',
-                  border: '1px solid rgba(59,130,246,0.2)',
-                  borderRadius: 8, padding: '14px 18px', marginBottom: 24,
-                  display: 'flex', alignItems: 'flex-start', gap: 12,
-                }}>
-                  <span style={{ color: '#3B82F6', fontSize: 16, marginTop: 1 }}>ℹ</span>
-                  <span style={{ color: '#9ca3af', fontSize: 14, lineHeight: 1.5 }}>
-                    You only pay when we find real savings. Your plan activates automatically after your first audit identifies waste in your AWS account.
-                  </span>
-                </div>
-              )}
+          {/* ── PLAN CARDS ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-                {/* Standard */}
+            {/* Standard */}
+            {(() => {
+              const isCurrentPlan = status?.tier === 'standard' && isActive
+              return (
                 <div style={{
-                  backgroundColor: '#0D0D0D', border: '1px solid #1E1E1C',
+                  backgroundColor: '#0D0D0D',
+                  border: isCurrentPlan ? '1px solid rgba(16,185,129,0.3)' : '1px solid #1E1E1C',
                   borderRadius: 12, padding: '24px 28px',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  gap: 16, flexWrap: 'wrap',
-                  transition: 'border-color 200ms',
+                  gap: 16, flexWrap: 'wrap', transition: 'border-color 200ms',
                 }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = '#2A2A28'}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = '#1E1E1C'}
+                  onMouseEnter={e => { if (!isCurrentPlan) e.currentTarget.style.borderColor = '#2A2A28' }}
+                  onMouseLeave={e => { if (!isCurrentPlan) e.currentTarget.style.borderColor = '#1E1E1C' }}
                 >
                   <div>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
@@ -360,44 +393,60 @@ export default function Billing() {
                       ))}
                     </ul>
                   </div>
-                  <button
-                    onClick={() => startCheckout('standard')}
-                    disabled={!!checkoutLoading || !hasAudit}
-                    style={{
-                      backgroundColor: checkoutLoading === 'standard' ? '#2563EB' : '#3B82F6',
-                      color: '#fff', border: 'none', borderRadius: 8,
-                      padding: '10px 22px', fontSize: 14, fontWeight: 600,
-                      cursor: (checkoutLoading || !hasAudit) ? 'not-allowed' : 'pointer',
-                      opacity: (checkoutLoading && checkoutLoading !== 'standard') || !hasAudit ? 0.4 : 1,
-                      whiteSpace: 'nowrap', flexShrink: 0,
-                      transition: 'transform 150ms, box-shadow 150ms',
-                    }}
-                    onMouseEnter={e => { if (!checkoutLoading && hasAudit) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' } }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
-                  >
-                    {checkoutLoading === 'standard' ? 'Redirecting…' : !hasAudit ? 'Run an audit first' : 'Start Standard Plan (20% of savings)'}
-                  </button>
+                  {isCurrentPlan ? (
+                    <button disabled style={{
+                      backgroundColor: '#2a2a28', color: '#6b7280', border: 'none',
+                      borderRadius: 8, padding: '10px 22px', fontSize: 14, fontWeight: 600,
+                      cursor: 'not-allowed', whiteSpace: 'nowrap', flexShrink: 0,
+                    }}>
+                      Current Plan
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => startCheckout('standard')}
+                      disabled={!!checkoutLoading || !hasAudit}
+                      style={{
+                        backgroundColor: checkoutLoading === 'standard' ? '#2563EB' : '#3B82F6',
+                        color: '#fff', border: 'none', borderRadius: 8,
+                        padding: '10px 22px', fontSize: 14, fontWeight: 600,
+                        cursor: (checkoutLoading || !hasAudit) ? 'not-allowed' : 'pointer',
+                        opacity: (checkoutLoading && checkoutLoading !== 'standard') || !hasAudit ? 0.4 : 1,
+                        whiteSpace: 'nowrap', flexShrink: 0, transition: 'transform 150ms, box-shadow 150ms',
+                      }}
+                      onMouseEnter={e => { if (!checkoutLoading && hasAudit) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' } }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
+                    >
+                      {checkoutLoading === 'standard' ? 'Redirecting…' : !hasAudit ? 'Run an audit first' : 'Start Standard Plan (20% of savings)'}
+                    </button>
+                  )}
                 </div>
+              )
+            })()}
 
-                {/* Team */}
+            {/* Team */}
+            {(() => {
+              const isCurrentPlan = status?.tier === 'team' && isActive
+              return (
                 <div style={{
-                  backgroundColor: '#0D0D0D', border: '2px solid #3B82F6',
+                  backgroundColor: '#0D0D0D',
+                  border: isCurrentPlan ? '2px solid rgba(16,185,129,0.4)' : '2px solid #3B82F6',
                   borderRadius: 12, padding: '24px 28px', position: 'relative',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  gap: 16, flexWrap: 'wrap',
-                  transition: 'border-color 200ms',
+                  gap: 16, flexWrap: 'wrap', transition: 'border-color 200ms',
                 }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = '#60A5FA'}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = '#3B82F6'}
+                  onMouseEnter={e => { if (!isCurrentPlan) e.currentTarget.style.borderColor = '#60A5FA' }}
+                  onMouseLeave={e => { if (!isCurrentPlan) e.currentTarget.style.borderColor = '#3B82F6' }}
                 >
-                  <div style={{
-                    position: 'absolute', top: -1, left: 28,
-                    backgroundColor: '#3B82F6', color: '#fff',
-                    fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
-                    padding: '3px 10px', borderRadius: '0 0 6px 6px', textTransform: 'uppercase',
-                  }}>
-                    Most Popular
-                  </div>
+                  {!isCurrentPlan && (
+                    <div style={{
+                      position: 'absolute', top: -1, left: 28,
+                      backgroundColor: '#3B82F6', color: '#fff',
+                      fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
+                      padding: '3px 10px', borderRadius: '0 0 6px 6px', textTransform: 'uppercase',
+                    }}>
+                      Most Popular
+                    </div>
+                  )}
                   <div>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
                       <span style={{ fontSize: 20, fontWeight: 700, color: '#F5F4F0', letterSpacing: '-0.02em' }}>Team</span>
@@ -414,40 +463,112 @@ export default function Billing() {
                       ))}
                     </ul>
                   </div>
-                  <button
-                    onClick={() => startCheckout('team')}
-                    disabled={!!checkoutLoading || !hasAudit}
-                    style={{
-                      backgroundColor: checkoutLoading === 'team' ? '#2563EB' : '#3B82F6',
-                      color: '#fff', border: 'none', borderRadius: 8,
-                      padding: '10px 22px', fontSize: 14, fontWeight: 600,
-                      cursor: (checkoutLoading || !hasAudit) ? 'not-allowed' : 'pointer',
-                      opacity: (checkoutLoading && checkoutLoading !== 'team') || !hasAudit ? 0.4 : 1,
-                      whiteSpace: 'nowrap', flexShrink: 0,
-                      transition: 'transform 150ms, box-shadow 150ms',
-                    }}
-                    onMouseEnter={e => { if (!checkoutLoading && hasAudit) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' } }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
-                  >
-                    {checkoutLoading === 'team' ? 'Redirecting…' : !hasAudit ? 'Run an audit first' : 'Start Team Plan (15% of savings)'}
-                  </button>
+                  {isCurrentPlan ? (
+                    <button disabled style={{
+                      backgroundColor: '#2a2a28', color: '#6b7280', border: 'none',
+                      borderRadius: 8, padding: '10px 22px', fontSize: 14, fontWeight: 600,
+                      cursor: 'not-allowed', whiteSpace: 'nowrap', flexShrink: 0,
+                    }}>
+                      Current Plan
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => startCheckout('team')}
+                      disabled={!!checkoutLoading || !hasAudit}
+                      style={{
+                        backgroundColor: checkoutLoading === 'team' ? '#2563EB' : '#3B82F6',
+                        color: '#fff', border: 'none', borderRadius: 8,
+                        padding: '10px 22px', fontSize: 14, fontWeight: 600,
+                        cursor: (checkoutLoading || !hasAudit) ? 'not-allowed' : 'pointer',
+                        opacity: (checkoutLoading && checkoutLoading !== 'team') || !hasAudit ? 0.4 : 1,
+                        whiteSpace: 'nowrap', flexShrink: 0, transition: 'transform 150ms, box-shadow 150ms',
+                      }}
+                      onMouseEnter={e => { if (!checkoutLoading && hasAudit) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' } }}
+                      onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
+                    >
+                      {checkoutLoading === 'team' ? 'Redirecting…' : !hasAudit ? 'Run an audit first' : 'Start Team Plan (15% of savings)'}
+                    </button>
+                  )}
                 </div>
+              )
+            })()}
 
+          </div>
+
+          <p style={{ fontSize: 12, color: '#555552', marginBottom: 8, lineHeight: 1.6 }}>
+            Payments processed securely by Stripe. You'll be redirected to Stripe Checkout to complete setup.
+          </p>
+
+          <div style={{ marginBottom: 40, color: '#6b7280', fontSize: 13 }}>
+            Need help choosing?{' '}
+            <button onClick={() => { setShowContact(true); setContactSent(false); setContactForm({ name: '', email: '', message: '' }) }}
+              style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: 13, cursor: 'pointer', padding: 0 }}>
+              Contact us
+            </button>
+          </div>
+
+          {/* ── PAYMENT HISTORY ── */}
+          {invoices.length > 0 && (
+            <div>
+              <h3 style={{ fontSize: 16, fontWeight: 600, color: '#F5F4F0', margin: '0 0 16px', letterSpacing: '-0.02em' }}>
+                Payment History
+              </h3>
+              <div style={{ border: '1px solid #1E1E1C', borderRadius: 10, overflow: 'hidden' }}>
+                <div style={{
+                  display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr 1fr' : '1.5fr 2fr 1fr 1fr 1fr',
+                  padding: '10px 20px', borderBottom: '1px solid #1E1E1C',
+                  fontSize: 11, fontWeight: 700, letterSpacing: '0.07em', color: '#6B7280',
+                }}>
+                  <span>DATE</span>
+                  {!isMobile && <span>DESCRIPTION</span>}
+                  <span>AMOUNT</span>
+                  <span>STATUS</span>
+                  {!isMobile && <span>RECEIPT</span>}
+                </div>
+                {invoices.map((inv, i) => (
+                  <div key={inv.id} style={{
+                    display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr 1fr' : '1.5fr 2fr 1fr 1fr 1fr',
+                    padding: '14px 20px', borderBottom: i < invoices.length - 1 ? '1px solid #1A1A18' : 'none',
+                    fontSize: 13, color: '#9CA3AF', alignItems: 'center',
+                    backgroundColor: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
+                  }}>
+                    <span style={{ color: '#F5F4F0' }}>
+                      {new Date(inv.created * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                    {!isMobile && (
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 16 }}>
+                        {inv.lines?.data?.[0]?.description || inv.description || 'Vaultix AI Subscription'}
+                      </span>
+                    )}
+                    <span style={{ color: '#F5F4F0', fontWeight: 500 }}>
+                      ${(inv.amount_paid / 100).toFixed(2)}
+                    </span>
+                    <span>
+                      <span style={{
+                        background: inv.status === 'paid' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)',
+                        border: `1px solid ${inv.status === 'paid' ? 'rgba(34,197,94,0.25)' : 'rgba(245,158,11,0.25)'}`,
+                        color: inv.status === 'paid' ? '#22c55e' : '#f59e0b',
+                        borderRadius: 20, padding: '2px 10px', fontSize: 11, fontWeight: 600,
+                      }}>
+                        {inv.status === 'paid' ? 'Paid' : inv.status}
+                      </span>
+                    </span>
+                    {!isMobile && (
+                      <span>
+                        {inv.hosted_invoice_url ? (
+                          <a href={inv.hosted_invoice_url} target="_blank" rel="noopener noreferrer"
+                            style={{ color: '#3B82F6', fontSize: 13, textDecoration: 'none' }}>
+                            View →
+                          </a>
+                        ) : '—'}
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
-
-              <p style={{ fontSize: 12, color: '#555552', marginTop: 20, lineHeight: 1.6 }}>
-                Payments processed securely by Stripe. You'll be redirected to Stripe Checkout to complete setup.
-              </p>
-
-              <div style={{ textAlign: 'center', marginTop: 32, color: '#6b7280', fontSize: 13 }}>
-                Need help choosing?{' '}
-                <button onClick={() => { setShowContact(true); setContactSent(false); setContactForm({ name: '', email: '', message: '' }) }}
-                  style={{ background: 'none', border: 'none', color: '#3B82F6', fontSize: 13, cursor: 'pointer', padding: 0 }}>
-                  Contact us
-                </button>
-              </div>
-            </>
+            </div>
           )}
+
         </div>
       </main>
 
