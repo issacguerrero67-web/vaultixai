@@ -144,4 +144,95 @@ router.post('/rollback', async (req, res, next) => {
   }
 })
 
+// AI chat — answers questions about the user's specific audit findings
+router.post('/chat', async (req, res) => {
+  try {
+    const userId = req.user.id
+    const { message, aws_account_id, conversation_history = [] } = req.body
+
+    if (!message) return res.status(400).json({ error: 'Message required' })
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, plan')
+      .eq('id', userId)
+      .single()
+
+    const { data: account } = await supabase
+      .from('aws_accounts')
+      .select('account_name, role_arn, last_audit_at')
+      .eq('id', aws_account_id)
+      .eq('user_id', userId)
+      .single()
+
+    const { data: report } = await supabase
+      .from('audit_reports')
+      .select('findings, total_savings, created_at')
+      .eq('aws_account_id', aws_account_id)
+      .eq('user_id', userId)
+      .eq('status', 'complete')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    const findings = report?.findings || []
+    const totalSavings = report?.total_savings || 0
+    const lastAudit = report?.created_at
+      ? new Date(report.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : 'No audit run yet'
+
+    const findingsSummary = findings.length > 0
+      ? findings.map((f, i) =>
+          `${i + 1}. [${f.severity.toUpperCase()}] ${f.category} — ${f.title}${f.estimatedMonthlySavings > 0 ? ` (saves $${f.estimatedMonthlySavings}/mo)` : ''}\n   ${f.description}\n   Fix: ${f.recommendation}`
+        ).join('\n\n')
+      : 'No findings available yet. Run an audit first.'
+
+    const systemPrompt = `You are the Vaultix AI Assistant — an AWS cost optimization specialist embedded directly in the Vaultix platform. You have full context of this customer's AWS environment and audit findings.
+
+CUSTOMER CONTEXT:
+- Name: ${profile?.full_name || 'there'}
+- Plan: ${profile?.plan || 'Standard'}
+- AWS Account: ${account?.account_name || 'Connected Account'}
+- Last Audit: ${lastAudit}
+- Total Potential Savings: $${totalSavings}/mo
+- Total Findings: ${findings.length}
+
+THEIR ACTUAL FINDINGS:
+${findingsSummary}
+
+YOUR ROLE:
+- Answer questions about their specific AWS findings using the exact data above
+- Explain AWS concepts in plain, accessible English
+- Help prioritize which fixes to tackle first based on impact and effort
+- Give specific step-by-step instructions referencing their actual resource IDs when available
+- Be concise, friendly, and technically accurate
+- Always reference their real data — never invent resource IDs or savings numbers
+- If asked about something outside their findings, be honest about it
+- Keep responses focused and actionable — no unnecessary filler
+- Format responses with clear structure when listing steps or multiple items
+
+You are not a general-purpose AI. You are their personal AWS cost optimization advisor.`
+
+    const messages = [
+      ...conversation_history,
+      { role: 'user', content: message },
+    ]
+
+    const Anthropic = (await import('@anthropic-ai/sdk')).default
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages,
+    })
+
+    res.json({ reply: response.content[0].text })
+  } catch (err) {
+    console.error('Autopilot chat error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 export default router
