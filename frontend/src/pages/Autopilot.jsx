@@ -102,7 +102,7 @@ export default function Autopilot() {
       if (profileRes.data?.full_name) setDisplayName(profileRes.data.full_name)
 
       const plan = profileRes.data?.plan
-      if (plan !== 'team' && plan !== 'enterprise') {
+      if (!plan || plan === 'free') {
         setView('upgrade')
         setLoading(false)
         return
@@ -387,9 +387,9 @@ export default function Autopilot() {
               padding: 40, textAlign: 'center', maxWidth: 480, width: '100%',
             }}>
               <span style={{ fontSize: 40, marginBottom: 16, display: 'block' }}>⚡</span>
-              <h1 style={{ fontSize: 24, fontWeight: 700, color: '#F5F4F0', margin: '0 0 8px' }}>Autopilot</h1>
+              <h1 style={{ fontSize: 24, fontWeight: 700, color: '#F5F4F0', margin: '0 0 8px' }}>Autopilot is included with all plans</h1>
               <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6, marginBottom: 24, margin: '0 0 24px' }}>
-                Let Vaultix automatically execute approved fixes in your AWS account. You only pay 35% of verified savings.
+                Subscribe to Standard or Team to access Autopilot — automated AWS cost optimization.
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32, textAlign: 'left' }}>
@@ -415,7 +415,7 @@ export default function Autopilot() {
                 onMouseEnter={e => e.currentTarget.style.background = '#2563EB'}
                 onMouseLeave={e => e.currentTarget.style.background = '#3B82F6'}
               >
-                Upgrade to Autopilot — 35% of savings
+                View Plans
               </button>
               <p style={{ fontSize: 12, color: '#6b7280', marginTop: 12, margin: '12px 0 0' }}>
                 No upfront cost. You only pay when we save you money.

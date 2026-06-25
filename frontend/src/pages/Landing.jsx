@@ -307,7 +307,7 @@ export default function Landing() {
             <p style={{ fontSize: 12, color: '#888884', marginBottom: '0.5rem' }}>of verified savings</p>
             <p style={{ fontSize: 12, color: '#555552', marginBottom: '1.75rem' }}>You pay nothing until we save you money</p>
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem', borderTop: '1px solid #1E1E1C', paddingTop: '1.25rem', flex: 1 }}>
-              {['Up to 3 AWS accounts', 'Full AI cost audit', 'Monthly re-scans', 'Email findings report', '30-day savings verification'].map((f, i) => (
+              {['Up to 3 AWS accounts', 'Full AI cost audit', 'Monthly re-scans', 'Email findings report', 'Autopilot included ⚡'].map((f, i) => (
                 <li key={i} style={{ fontSize: 13, color: '#888884', padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ color: '#3B82F6', fontSize: 14, flexShrink: 0 }}>✓</span>{f}
                 </li>
@@ -333,7 +333,7 @@ export default function Landing() {
             <p style={{ fontSize: 12, color: '#888884', marginBottom: '0.5rem' }}>of verified savings</p>
             <p style={{ fontSize: 12, color: '#555552', marginBottom: '1.75rem' }}>Volume discount for larger savings</p>
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem', borderTop: '1px solid #1E1E1C', paddingTop: '1.25rem', flex: 1 }}>
-              {['Unlimited AWS accounts', 'Everything in Standard', 'Slack alerts', 'Priority support', 'Quarterly business review'].map((f, i) => (
+              {['Unlimited AWS accounts', 'Everything in Standard', 'Autopilot included ⚡', 'Slack alerts', 'Priority support', 'Quarterly business review'].map((f, i) => (
                 <li key={i} style={{ fontSize: 13, color: '#888884', padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ color: '#3B82F6', fontSize: 14, flexShrink: 0 }}>✓</span>{f}
                 </li>
