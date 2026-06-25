@@ -30,9 +30,11 @@ const MOBILE_CSS = `
 `
 
 export default function Landing() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) window.location.href = '/dashboard'
+      setIsLoggedIn(!!session)
     })
   }, [])
 
@@ -127,6 +129,17 @@ export default function Landing() {
             onMouseLeave={e => e.target.style.color = '#888884'}>Pricing</a>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
+          {isLoggedIn ? (
+            <a href="/dashboard" style={{
+              background: '#3B82F6', color: 'white', border: 'none', borderRadius: 6,
+              padding: '8px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', textDecoration: 'none',
+            }}
+              onMouseEnter={e => e.currentTarget.style.background = '#2563EB'}
+              onMouseLeave={e => e.currentTarget.style.background = '#3B82F6'}>
+              Go to Dashboard →
+            </a>
+          ) : (
+            <>
           <Link to="/login" style={{
             color: '#F5F4F0', padding: '8px 16px',
             borderRadius: 6, fontSize: 13, fontWeight: 500, textDecoration: 'none',
@@ -145,6 +158,8 @@ export default function Landing() {
             onMouseLeave={e => e.currentTarget.style.background = '#3B82F6'}>
             Get Started
           </Link>
+            </>
+          )}
         </div>
       </nav>
 
