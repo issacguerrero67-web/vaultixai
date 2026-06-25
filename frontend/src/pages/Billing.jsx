@@ -14,7 +14,7 @@ const NAV_ITEMS = [
   { label: 'Reports',      icon: '≡', path: '/dashboard/reports' },
   { label: 'Billing',      icon: '◇', path: '/dashboard/billing' },
   { label: 'AWS Accounts', icon: '⊕', path: '/dashboard/accounts' },
-  { label: 'Autopilot',    icon: '⚡', path: '/dashboard/autopilot' },
+  { label: 'Autopilot',    icon: '✦', path: '/dashboard/autopilot' },
   { label: 'Settings',     icon: '⊙', path: '/dashboard/settings' },
 ]
 
@@ -461,7 +461,7 @@ export default function Billing() {
           {[
             { label: 'Dashboard', path: '/dashboard', icon: '⊡' },
             { label: 'Reports',   path: '/dashboard/reports', icon: '≡' },
-            { label: 'Autopilot', path: '/dashboard/autopilot', icon: '⚡' },
+            { label: 'Autopilot', path: '/dashboard/autopilot', icon: '✦' },
             { label: 'Accounts',  path: '/dashboard/accounts', icon: '⊕' },
             { label: 'Settings',  path: '/dashboard/settings', icon: '⊙' },
           ].map(({ label, path, icon }) => {

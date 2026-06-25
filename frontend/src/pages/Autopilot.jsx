@@ -16,7 +16,7 @@ const NAV_ITEMS = [
   { label: 'Reports',      icon: '≡', path: '/dashboard/reports' },
   { label: 'Billing',      icon: '◇', path: '/dashboard/billing' },
   { label: 'AWS Accounts', icon: '⊕', path: '/dashboard/accounts' },
-  { label: 'Autopilot',    icon: '⚡', path: '/dashboard/autopilot' },
+  { label: 'Autopilot',    icon: '✦', path: '/dashboard/autopilot' },
   { label: 'Settings',     icon: '⊙', path: '/dashboard/settings' },
 ]
 
@@ -386,7 +386,7 @@ export default function Autopilot() {
               background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 12,
               padding: 40, textAlign: 'center', maxWidth: 480, width: '100%',
             }}>
-              <span style={{ fontSize: 40, marginBottom: 16, display: 'block' }}>⚡</span>
+              <span style={{ fontSize: 40, marginBottom: 16, display: 'block' }}>✦</span>
               <h1 style={{ fontSize: 24, fontWeight: 700, color: '#F5F4F0', margin: '0 0 8px' }}>Autopilot is included with all plans</h1>
               <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6, marginBottom: 24, margin: '0 0 24px' }}>
                 Subscribe to Standard or Team to access Autopilot — automated AWS cost optimization.
@@ -606,7 +606,7 @@ export default function Autopilot() {
                 background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8,
                 padding: 48, textAlign: 'center', marginTop: 24,
               }}>
-                <span style={{ fontSize: 32, display: 'block', marginBottom: 12 }}>⚡</span>
+                <span style={{ fontSize: 32, display: 'block', marginBottom: 12 }}>✦</span>
                 <p style={{ fontSize: 16, fontWeight: 600, color: '#F5F4F0', margin: '0 0 8px' }}>No actions yet</p>
                 <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>
                   Click 'Scan for Actions' to analyze your AWS account for automated fixes.
@@ -774,7 +774,7 @@ export default function Autopilot() {
           {[
             { label: 'Dashboard', path: '/dashboard', icon: '⊡' },
             { label: 'Reports',   path: '/dashboard/reports', icon: '≡' },
-            { label: 'Autopilot', path: '/dashboard/autopilot', icon: '⚡' },
+            { label: 'Autopilot', path: '/dashboard/autopilot', icon: '✦' },
             { label: 'Accounts',  path: '/dashboard/accounts', icon: '⊕' },
             { label: 'Settings',  path: '/dashboard/settings', icon: '⊙' },
           ].map(({ label, path, icon }) => {
