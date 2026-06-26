@@ -12,6 +12,8 @@ import Billing from './pages/Billing'
 import ResetPassword from './pages/ResetPassword'
 import AWSAccounts from './pages/AWSAccounts'
 import Autopilot from './pages/Autopilot'
+import Privacy from './pages/Privacy'
+import Terms from './pages/Terms'
 import { supabase } from './lib/supabase'
 
 function RequireAuth({ children }) {
@@ -44,6 +46,8 @@ export default function App() {
         <Route path="/dashboard/billing" element={<RequireAuth><Billing /></RequireAuth>} />
         <Route path="/dashboard/settings" element={<RequireAuth><Settings /></RequireAuth>} />
         <Route path="/dashboard/autopilot" element={<RequireAuth><Autopilot /></RequireAuth>} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

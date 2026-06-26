@@ -596,22 +596,14 @@ export default function Landing() {
       )}
 
       {/* FOOTER */}
-      <footer className="footer" style={{ padding: '2rem 2.5rem', borderTop: '1px solid #1E1E1C', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600 }}>
-          <div style={{ width: 26, height: 26, borderRadius: 6, background: '#1A1A18', border: '1px solid #333330', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#3B82F6' }}>V</div>
-          Vaultix AI
+      <footer className="footer" style={{ padding: '24px 48px', display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div />
+        <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+          <a href="/privacy" style={{ fontSize: 13, color: '#6b7280', textDecoration: 'none', cursor: 'pointer' }}>Privacy</a>
+          <a href="/terms" style={{ fontSize: 13, color: '#6b7280', textDecoration: 'none', cursor: 'pointer' }}>Terms</a>
+          <button onClick={() => { setShowContact(true); setContactSent(false); setContactForm({ name: '', email: '', message: '' }) }} style={{ fontSize: 13, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Contact</button>
         </div>
-        <div className="footer-links" style={{ display: 'flex', gap: '1.5rem' }}>
-          {['Privacy', 'Terms'].map(l => (
-            <a key={l} href="#" style={{ fontSize: 13, color: '#555552', textDecoration: 'none', transition: 'color 150ms' }}
-              onMouseEnter={e => e.target.style.color = '#888884'}
-              onMouseLeave={e => e.target.style.color = '#555552'}>{l}</a>
-          ))}
-          <a href="mailto:hello@vaultixai.app" style={{ fontSize: 13, color: '#555552', textDecoration: 'none', transition: 'color 150ms' }}
-            onMouseEnter={e => e.target.style.color = '#888884'}
-            onMouseLeave={e => e.target.style.color = '#555552'}>Contact</a>
-        </div>
-        <p style={{ fontSize: 12, color: '#333330' }}>© 2026 Vaultix AI · Built for engineers, by engineers.</p>
+        <p style={{ fontSize: 12, color: '#444', textAlign: 'right', margin: 0 }}>© 2026 Vaultix AI · Built for engineers, by engineers.</p>
       </footer>
     </div>
   )
