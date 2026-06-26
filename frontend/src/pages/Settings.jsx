@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard',    icon: '⊡', path: '/dashboard' },
   { label: 'Reports',      icon: '≡', path: '/dashboard/reports' },
   { label: 'Billing',      icon: '◇', path: '/dashboard/billing' },
-  { label: 'AWS Accounts', icon: '⊕', path: '/dashboard/accounts' },
+  { label: 'Cloud Accounts', icon: '⊕', path: '/dashboard/accounts' },
   { label: 'Autopilot',    icon: '✦', path: '/dashboard/autopilot' },
   { label: 'Settings',     icon: '⊙', path: '/dashboard/settings' },
 ]
@@ -278,7 +278,7 @@ export default function Settings() {
               style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: '#6b7280', fontSize: 20, cursor: 'pointer' }}>×</button>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: '#ef4444', marginBottom: 12 }}>Delete Account</h2>
             <p style={{ fontSize: 14, color: '#9ca3af', marginBottom: 20, lineHeight: 1.6 }}>
-              Your account will be <strong style={{ color: '#F5F4F0' }}>permanently deleted in 30 days</strong>. All AWS connections will be removed immediately. Contact <strong style={{ color: '#F5F4F0' }}>issac@vaultixai.app</strong> within 30 days to cancel.
+              Your account will be <strong style={{ color: '#F5F4F0' }}>permanently deleted in 30 days</strong>. All cloud connections will be removed immediately. Contact <strong style={{ color: '#F5F4F0' }}>issac@vaultixai.app</strong> within 30 days to cancel.
             </p>
             <input
               type="text"
@@ -372,14 +372,14 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* ── SECTION 2: CONNECTED AWS ACCOUNTS ── */}
+          {/* ── SECTION 2: CONNECTED CLOUD ACCOUNTS ── */}
           <div style={CARD_STYLE}>
-            <div style={LABEL_STYLE}>Connected AWS Accounts</div>
+            <div style={LABEL_STYLE}>Connected Cloud Accounts</div>
             {awsAccounts.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                <p style={{ fontSize: 13, color: '#666662', margin: '0 0 12px' }}>No AWS accounts connected yet.</p>
+                <p style={{ fontSize: 13, color: '#666662', margin: '0 0 12px' }}>No cloud accounts connected yet.</p>
                 <Link to="/dashboard/connect" style={{ display: 'inline-block', background: '#3B82F6', color: '#fff', fontSize: 13, fontWeight: 600, padding: '8px 18px', borderRadius: 8, textDecoration: 'none' }}>
-                  Connect AWS Account →
+                  Connect Cloud Account →
                 </Link>
               </div>
             ) : (
@@ -554,7 +554,7 @@ export default function Settings() {
                   {/* Disconnect all */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, gap: 16 }}>
                     <div>
-                      <div style={{ fontSize: 14, fontWeight: 500, color: '#F5F4F0', marginBottom: 3 }}>Disconnect all AWS accounts</div>
+                      <div style={{ fontSize: 14, fontWeight: 500, color: '#F5F4F0', marginBottom: 3 }}>Disconnect all cloud accounts</div>
                       <div style={{ fontSize: 12, color: '#6b7280' }}>Removes all connected accounts. Audit history is preserved.</div>
                     </div>
                     {disconnectAllConfirm ? (

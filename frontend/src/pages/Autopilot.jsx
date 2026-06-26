@@ -17,7 +17,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard',    icon: '⊡', path: '/dashboard' },
   { label: 'Reports',      icon: '≡', path: '/dashboard/reports' },
   { label: 'Billing',      icon: '◇', path: '/dashboard/billing' },
-  { label: 'AWS Accounts', icon: '⊕', path: '/dashboard/accounts' },
+  { label: 'Cloud Accounts', icon: '⊕', path: '/dashboard/accounts' },
   { label: 'Autopilot',    icon: '✦', path: '/dashboard/autopilot' },
   { label: 'Settings',     icon: '⊙', path: '/dashboard/settings' },
 ]
@@ -125,7 +125,7 @@ export default function Autopilot() {
 
       setMessages([{
         role: 'assistant',
-        content: `Hi ${profile?.full_name || 'there'}! I'm your Vaultix AI Assistant. I have full context of your AWS account${account ? ` (${account.account_name})` : ''} and your latest audit findings.\n\n${findingsCount > 0 ? `You have **${findingsCount} findings** with $${savings.toLocaleString()}/mo in potential savings. ` : 'No audit found yet — run one from the Dashboard to unlock personalized recommendations. '}What would you like to know about your AWS costs?`,
+        content: `Hi ${profile?.full_name || 'there'}! I'm your Vaultix AI Assistant. I have full context of your cloud account${account ? ` (${account.account_name})` : ''} and your latest audit findings.\n\n${findingsCount > 0 ? `You have **${findingsCount} findings** with $${savings.toLocaleString()}/mo in potential savings. ` : 'No audit found yet — run one from the Dashboard to unlock personalized recommendations. '}What would you like to know about your cloud costs?`,
       }])
 
       setPageLoading(false)
@@ -169,7 +169,7 @@ export default function Autopilot() {
     localStorage.removeItem('vaultix_chat_history')
     setMessages([{
       role: 'assistant',
-      content: `Hi ${displayName || 'there'}! I'm your Vaultix AI Assistant. How can I help you with your AWS costs today?`,
+      content: `Hi ${displayName || 'there'}! I'm your Vaultix AI Assistant. How can I help you with your cloud costs today?`,
     }])
   }
 
@@ -350,7 +350,7 @@ export default function Autopilot() {
         {/* No account banner */}
         {!awsAccount && (
           <div style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 8, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, flexShrink: 0 }}>
-            <span style={{ fontSize: 13, color: '#9ca3af' }}>Connect an AWS account to unlock personalized recommendations</span>
+            <span style={{ fontSize: 13, color: '#9ca3af' }}>Connect a cloud account to unlock personalized recommendations</span>
             <Link to="/dashboard/connect" style={{ fontSize: 13, fontWeight: 600, color: '#3B82F6', textDecoration: 'none', whiteSpace: 'nowrap' }}>Connect Account →</Link>
           </div>
         )}
@@ -369,7 +369,7 @@ export default function Autopilot() {
                   'What should I fix first?',
                   'How much can I save this month?',
                   'Explain my highest severity finding',
-                  'What is an unattached EBS volume?',
+                  'What cloud resources are costing me the most?',
                 ].map(q => (
                   <button key={q} onClick={() => setInput(q)}
                     style={{ background: '#1a1a18', border: '1px solid #2a2a28', color: '#9ca3af', borderRadius: 20, padding: '8px 14px', fontSize: 13, cursor: 'pointer', transition: 'border-color 150ms, color 150ms' }}
@@ -433,7 +433,7 @@ export default function Autopilot() {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about your AWS costs..."
+                placeholder="Ask about your cloud costs..."
                 rows={1}
                 style={{ flex: 1, background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8, padding: '12px 14px', color: '#F5F4F0', fontSize: 14, resize: 'none', outline: 'none', lineHeight: 1.5, fontFamily: 'inherit', maxHeight: 120, overflowY: 'auto', transition: 'border-color 150ms' }}
                 onFocus={e => { e.currentTarget.style.borderColor = '#3B82F6' }}

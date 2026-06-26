@@ -53,7 +53,7 @@ export default function ConnectAWS() {
       .eq('user_id', session.user.id)
 
     if (existingAccounts && existingAccounts.length > 0) {
-      setError('You already have a connected AWS account. Go to your dashboard to run an audit or view your report.')
+      setError('You already have a connected cloud account. Go to your dashboard to run an audit or view your report.')
       return
     }
 

@@ -16,7 +16,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard',    icon: '⊡', path: '/dashboard' },
   { label: 'Reports',      icon: '≡', path: '/dashboard/reports' },
   { label: 'Billing',      icon: '◇', path: '/dashboard/billing' },
-  { label: 'AWS Accounts', icon: '⊕', path: '/dashboard/accounts' },
+  { label: 'Cloud Accounts', icon: '⊕', path: '/dashboard/accounts' },
   { label: 'Autopilot',    icon: '✦', path: '/dashboard/autopilot' },
   { label: 'Settings',     icon: '⊙', path: '/dashboard/settings' },
 ]
@@ -101,7 +101,7 @@ export default function Reports() {
 
       if (activeId) {
         const activeAcc = (allAccounts ?? []).find(a => a.id === activeId)
-        setAccountName(activeAcc?.account_name || 'My AWS Account')
+        setAccountName(activeAcc?.account_name || 'My Cloud Account')
 
         const { data: reports } = await supabase
           .from('audit_reports')
@@ -384,7 +384,7 @@ export default function Reports() {
                 No audits run yet
               </h2>
               <p style={{ color: '#666662', fontSize: 14, lineHeight: 1.7, maxWidth: 380, margin: '0 0 28px' }}>
-                Go to your dashboard and click Run Audit to scan your AWS account for cost optimization opportunities.
+                Go to your dashboard and click Run Audit to scan your cloud account for cost optimization opportunities.
               </p>
               <Link
                 to="/dashboard"
@@ -409,7 +409,7 @@ export default function Reports() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
                   <div>
                     <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.03em', color: '#F5F4F0', margin: '0 0 6px' }}>
-                      AWS Cost Audit Report
+                      Cloud Cost Audit Report
                     </h2>
                     <p style={{ fontSize: 13, color: '#666662', margin: 0 }}>
                       {accountName}{accountName && auditDate ? ' · ' : ''}{auditDate}
@@ -540,7 +540,7 @@ export default function Reports() {
                     setContactForm({
                       name: displayName || '',
                       email: userEmail || '',
-                      message: `I have ${sortedFindings.length} findings in my AWS Cost Audit Report with potential savings of $${totalSavings.toLocaleString()}/mo. I'd like help implementing the fixes.`,
+                      message: `I have ${sortedFindings.length} findings in my Cloud Cost Audit Report with potential savings of $${totalSavings.toLocaleString()}/mo. I'd like help implementing the fixes.`,
                     })
                     setShowContact(true)
                   }}

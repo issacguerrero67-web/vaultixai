@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard',    icon: '⊡', path: '/dashboard' },
   { label: 'Reports',      icon: '≡', path: '/dashboard/reports' },
   { label: 'Billing',      icon: '◇', path: '/dashboard/billing' },
-  { label: 'AWS Accounts', icon: '⊕', path: '/dashboard/accounts' },
+  { label: 'Cloud Accounts', icon: '⊕', path: '/dashboard/accounts' },
   { label: 'Autopilot',    icon: '✦', path: '/dashboard/autopilot' },
   { label: 'Settings',     icon: '⊙', path: '/dashboard/settings' },
 ]
@@ -206,7 +206,7 @@ export default function AWSAccounts() {
             <>
               <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: 12, marginBottom: atLimit ? 16 : 28 }}>
                 <h1 style={{ fontSize: 24, fontWeight: 700, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
-                  AWS Accounts
+                  Cloud Accounts
                   <span style={{ fontSize: 13, fontWeight: 400, color: '#6b7280', marginLeft: 12 }}>
                     {accounts.length}{maxAccounts === Infinity ? '' : `/${maxAccounts}`}
                   </span>
@@ -255,10 +255,10 @@ export default function AWSAccounts() {
           }}>
             <span style={{ fontSize: 32, marginBottom: 12, display: 'block' }}>☁</span>
             <p style={{ fontSize: 16, fontWeight: 600, color: '#F5F4F0', margin: '0 0 8px' }}>
-              No AWS accounts connected
+              No cloud accounts connected
             </p>
             <p style={{ fontSize: 14, color: '#6b7280', margin: '0 0 24px' }}>
-              Connect your first AWS account to start finding savings.
+              Connect your first cloud account to start finding savings.
             </p>
             <button
               onClick={() => navigate('/dashboard/connect')}
@@ -267,7 +267,7 @@ export default function AWSAccounts() {
                 borderRadius: 6, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
               }}
             >
-              Connect AWS Account →
+              Connect Cloud Account →
             </button>
           </div>
         ) : (

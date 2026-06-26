@@ -15,7 +15,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard',    icon: '⊡', path: '/dashboard' },
   { label: 'Reports',      icon: '≡', path: '/dashboard/reports' },
   { label: 'Billing',      icon: '◇', path: '/dashboard/billing' },
-  { label: 'AWS Accounts', icon: '⊕', path: '/dashboard/accounts' },
+  { label: 'Cloud Accounts', icon: '⊕', path: '/dashboard/accounts' },
   { label: 'Autopilot',    icon: '✦', path: '/dashboard/autopilot' },
   { label: 'Settings',     icon: '⊙', path: '/dashboard/settings' },
 ]
@@ -352,7 +352,7 @@ export default function Dashboard() {
             </Link>
             <button
               disabled={runningAudit || awsConnected === false}
-              title={awsConnected === false ? 'Connect an AWS account first' : undefined}
+              title={awsConnected === false ? 'Connect a cloud account first' : undefined}
               style={{
                 backgroundColor: runningAudit ? '#2563EB' : '#3B82F6',
                 color: '#fff',
@@ -376,13 +376,13 @@ export default function Dashboard() {
           </div>
           {runningAudit && (
             <p style={{ color: '#6B7280', fontSize: '13px', margin: '8px 0 0' }}>
-              Analyzing your AWS account… {elapsedSeconds}s
+              Analyzing your cloud account… {elapsedSeconds}s
             </p>
           )}
           {auditError && !runningAudit && (
             <p style={{ color: '#EF4444', fontSize: '13px', margin: '8px 0 0' }}>
               {auditError}{' '}
-              <a href="/dashboard/connect" style={{ color: '#3B82F6' }}>Connect AWS →</a>
+              <a href="/dashboard/connect" style={{ color: '#3B82F6' }}>Connect Account →</a>
             </p>
           )}
         </div>
@@ -390,12 +390,12 @@ export default function Dashboard() {
         {/* AWS connection status bar */}
         <div style={{ padding: '6px 32px', borderBottom: '1px solid #1E1E1C', backgroundColor: '#0D0D0D' }}>
           {awsConnected === true && (
-            <p style={{ margin: 0, fontSize: 12, color: '#34D399' }}>✓ AWS account connected</p>
+            <p style={{ margin: 0, fontSize: 12, color: '#34D399' }}>✓ Cloud account connected</p>
           )}
           {awsConnected === false && (
             <p style={{ margin: 0, fontSize: 12, color: '#666662' }}>
-              No AWS account connected —{' '}
-              <Link to="/dashboard/connect" style={{ color: '#3B82F6', textDecoration: 'none' }}>Connect AWS →</Link>
+              No cloud account connected —{' '}
+              <Link to="/dashboard/connect" style={{ color: '#3B82F6', textDecoration: 'none' }}>Connect Account →</Link>
             </p>
           )}
         </div>
@@ -416,10 +416,10 @@ export default function Dashboard() {
                 GETTING STARTED
               </p>
               <p style={{ fontSize: 18, fontWeight: 600, color: '#F5F4F0', margin: '0 0 20px' }}>
-                You're 3 steps away from finding your AWS waste.
+                You're 3 steps away from finding your cloud waste.
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                {['1 — Connect AWS', '2 — Run Audit', '3 — View Report'].map((step, i) => (
+                {['1 — Connect Account', '2 — Run Audit', '3 — View Report'].map((step, i) => (
                   <>
                     <span key={step} style={{ background: '#2a2a28', borderRadius: 20, padding: '6px 14px', fontSize: 13, color: '#9ca3af' }}>
                       {step}
@@ -442,7 +442,7 @@ export default function Dashboard() {
                     display: 'inline-block',
                   }}
                 >
-                  Connect your AWS Account →
+                  Connect your Cloud Account →
                 </Link>
                 <button
                   onClick={dismissWelcome}
@@ -602,7 +602,7 @@ export default function Dashboard() {
             /* Audit ran but no findings */
             <div style={{ background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8, padding: 32, textAlign: 'center', marginTop: 24 }}>
               <p style={{ color: '#6b7280', fontSize: 14, margin: 0 }}>No waste found in your last audit.</p>
-              <p style={{ color: '#444', fontSize: 13, marginTop: 8, margin: '8px 0 0' }}>Your AWS account looks clean. We'll re-scan automatically every 30 days.</p>
+              <p style={{ color: '#444', fontSize: 13, marginTop: 8, margin: '8px 0 0' }}>Your cloud account looks clean. We'll re-scan automatically every 30 days.</p>
             </div>
           ) : (
             /* No audit yet — original empty state */
@@ -626,10 +626,10 @@ export default function Dashboard() {
                 <CloudIcon />
               </div>
               <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#F5F4F0', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
-                No AWS accounts connected yet
+                No cloud accounts connected yet
               </h2>
               <p style={{ color: '#666662', fontSize: '14px', lineHeight: 1.7, maxWidth: '380px', margin: '0 0 28px' }}>
-                Connect your first AWS account to run your first audit and start finding savings.
+                Connect your first cloud account to run your first audit and start finding savings.
               </p>
               <Link
                 to="/dashboard/connect"
@@ -647,7 +647,7 @@ export default function Dashboard() {
                 onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
               >
-                Connect AWS Account →
+                Connect Cloud Account →
               </Link>
             </div>
           )}
