@@ -13,7 +13,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard',    icon: '⊡', path: '/dashboard' },
   { label: 'Reports',      icon: '≡', path: '/dashboard/reports' },
   { label: 'Billing',      icon: '◇', path: '/dashboard/billing' },
-  { label: 'AWS Accounts', icon: '⊕', path: '/dashboard/accounts' },
+  { label: 'Cloud Accounts', icon: '⊕', path: '/dashboard/accounts' },
   { label: 'Autopilot',    icon: '✦', path: '/dashboard/autopilot' },
   { label: 'Settings',     icon: '⊙', path: '/dashboard/settings' },
 ]
@@ -21,7 +21,7 @@ const NAV_ITEMS = [
 const BACKEND_URL = 'https://vaultixai-production.up.railway.app'
 
 const COMPARISON_FEATURES = [
-  { feature: 'AWS account connection',   free: true,    standard: true,              team: true },
+  { feature: 'Cloud account connection',  free: true,    standard: true,              team: true },
   { feature: 'AI cost audit',            free: true,    standard: true,              team: true },
   { feature: 'Findings report',          free: true,    standard: true,              team: true },
   { feature: 'Email report delivery',    free: false,   standard: true,              team: true },
@@ -30,7 +30,7 @@ const COMPARISON_FEATURES = [
   { feature: 'Automated fix execution',  free: false,   standard: true,              team: true },
   { feature: 'Full report history',      free: false,   standard: true,              team: true },
   { feature: 'Pre-deletion snapshots',   free: false,   standard: true,              team: true },
-  { feature: 'AWS accounts limit',       free: '1',     standard: '3',               team: 'Unlimited' },
+  { feature: 'Cloud accounts limit',      free: '1',     standard: '3',               team: 'Unlimited' },
   { feature: 'Slack/webhook alerts',     free: false,   standard: false,             team: true },
   { feature: 'Priority support',         free: false,   standard: false,             team: true },
   { feature: 'Quarterly business review',free: false,   standard: false,             team: true },
@@ -528,7 +528,7 @@ export default function Billing() {
                       <div style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 8, padding: '14px 18px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                         <span style={{ color: '#3B82F6', fontSize: 16 }}>ℹ</span>
                         <span style={{ color: '#9ca3af', fontSize: 14, lineHeight: 1.5 }}>
-                          You only pay when we find real savings. Your plan activates automatically after your first audit identifies waste in your AWS account.
+                          You only pay when we find real savings. Your plan activates automatically after your first audit identifies waste in your cloud account.
                         </span>
                       </div>
                     )}
@@ -551,7 +551,7 @@ export default function Billing() {
                         <span style={{ fontSize: 13, color: '#6b7280', marginLeft: 6 }}>of verified savings</span>
                       </div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 20px', marginBottom: 20 }}>
-                        {['Up to 3 AWS accounts', 'Full AI cost audit', 'Monthly re-scans', 'Email findings report', 'Autopilot — automated fix execution', 'Pre-deletion snapshots & rollback'].map(f => (
+                        {['Up to 3 cloud accounts', 'Full AI cost audit', 'Monthly re-scans', 'Email findings report', 'Autopilot — automated fix execution', 'Pre-deletion snapshots & rollback'].map(f => (
                           <span key={f} style={{ fontSize: 13, color: '#9ca3af' }}>✓ {f}</span>
                         ))}
                       </div>
@@ -591,7 +591,7 @@ export default function Billing() {
                         <span style={{ fontSize: 13, color: '#6b7280', marginLeft: 6 }}>of verified savings</span>
                       </div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 20px', marginBottom: 20 }}>
-                        {['Unlimited AWS accounts', 'Everything in Standard', 'Autopilot included', 'Slack alerts', 'Priority support', 'Quarterly business review'].map(f => (
+                        {['Unlimited cloud accounts', 'Everything in Standard', 'Autopilot included', 'Slack alerts', 'Priority support', 'Quarterly business review'].map(f => (
                           <span key={f} style={{ fontSize: 13, color: '#9ca3af' }}>✓ {f}</span>
                         ))}
                       </div>
