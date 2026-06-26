@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import AccountSwitcher from '../components/AccountSwitcher'
+import FeatureGate from '../components/FeatureGate'
+import { useUserPlan } from '../hooks/useUserPlan'
 
 const geistFontLink = document.createElement('link')
 geistFontLink.rel = 'stylesheet'
@@ -67,6 +69,9 @@ export default function Reports() {
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' })
   const [contactSent, setContactSent] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [pastReports, setPastReports] = useState([])
+  const [selectedReportId, setSelectedReportId] = useState(null)
+  const { isPaid } = useUserPlan()
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768)
@@ -104,8 +109,12 @@ export default function Reports() {
           .eq('user_id', session.user.id)
           .eq('aws_account_id', activeId)
           .order('created_at', { ascending: false })
-          .limit(1)
-        if (reports?.length) setReport(reports[0])
+          .limit(10)
+        if (reports?.length) {
+          setReport(reports[0])
+          setPastReports(reports)
+          setSelectedReportId(reports[0]?.id ?? null)
+        }
       }
 
       if (profile?.full_name) setDisplayName(profile.full_name)
@@ -118,6 +127,8 @@ export default function Reports() {
     setActiveAccountId(accountId)
     localStorage.setItem('vaultix_active_account', accountId)
     setReport(null)
+    setPastReports([])
+    setSelectedReportId(null)
     const activeAcc = accounts.find(a => a.id === accountId)
     setAccountName(activeAcc?.account_name || 'My AWS Account')
     const { data: reports } = await supabase
@@ -126,8 +137,12 @@ export default function Reports() {
       .eq('user_id', (await supabase.auth.getSession()).data.session?.user.id)
       .eq('aws_account_id', accountId)
       .order('created_at', { ascending: false })
-      .limit(1)
-    if (reports?.length) setReport(reports[0])
+      .limit(10)
+    if (reports?.length) {
+      setReport(reports[0])
+      setPastReports(reports)
+      setSelectedReportId(reports[0]?.id ?? null)
+    }
   }
 
   async function handleContactSubmit() {
@@ -455,6 +470,46 @@ export default function Reports() {
                   />
                 ))}
               </div>
+
+              {/* ── REPORT HISTORY ── */}
+              <FeatureGate
+                isPaid={isPaid}
+                message="Upgrade to view your full report history"
+                style={{ marginTop: 32, borderRadius: 8 }}
+              >
+                <div style={{ marginTop: 32, background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8, overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #2a2a28' }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: '#F5F4F0' }}>Report History</span>
+                  </div>
+                  {pastReports.length <= 1 ? (
+                    <div style={{ padding: '20px', color: '#6b7280', fontSize: 13 }}>No previous reports yet. Run more audits to build history.</div>
+                  ) : (
+                    pastReports.map((r, i) => (
+                      <div
+                        key={r.id}
+                        onClick={() => { setSelectedReportId(r.id); setReport(r) }}
+                        style={{
+                          padding: '12px 20px',
+                          borderTop: i === 0 ? 'none' : '1px solid #1e1e1c',
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          cursor: 'pointer',
+                          background: selectedReportId === r.id ? '#222220' : 'transparent',
+                          transition: 'background 150ms',
+                        }}
+                        onMouseEnter={e => { if (selectedReportId !== r.id) e.currentTarget.style.background = '#1e1e1c' }}
+                        onMouseLeave={e => { if (selectedReportId !== r.id) e.currentTarget.style.background = 'transparent' }}
+                      >
+                        <span style={{ fontSize: 13, color: '#F5F4F0' }}>
+                          {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                        <span style={{ fontSize: 13, color: '#3B82F6', fontWeight: 600 }}>
+                          ${(r.total_savings || 0).toLocaleString()}/mo
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </FeatureGate>
 
               {/* ── CONTACT CTA ── */}
               <div style={{

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import AccountSwitcher from '../components/AccountSwitcher'
+import { useUserPlan } from '../hooks/useUserPlan'
 
 const geistFontLink = document.createElement('link')
 geistFontLink.rel = 'stylesheet'
@@ -47,6 +48,7 @@ const SEVERITY_STYLES = {
 export default function Dashboard() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { isFree } = useUserPlan()
 
   const [userEmail, setUserEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
@@ -555,6 +557,40 @@ export default function Dashboard() {
                       </span>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {isFree && (
+                <div style={{
+                  marginTop: 24,
+                  background: 'rgba(59,130,246,0.08)',
+                  border: '1px solid rgba(59,130,246,0.25)',
+                  borderRadius: 8,
+                  padding: '20px 24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: 16,
+                }}>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: '#F5F4F0', margin: '0 0 4px' }}>
+                      🔒 Unlock AI-powered cost optimization
+                    </p>
+                    <p style={{ fontSize: 13, color: '#9ca3af', margin: 0 }}>
+                      Upgrade to use Autopilot AI chat, execute fixes automatically, and view report history.
+                    </p>
+                  </div>
+                  <Link
+                    to="/dashboard/billing"
+                    style={{
+                      backgroundColor: '#3B82F6', color: '#fff', textDecoration: 'none',
+                      borderRadius: 8, padding: '9px 18px', fontSize: 14, fontWeight: 600,
+                      whiteSpace: 'nowrap', flexShrink: 0,
+                    }}
+                  >
+                    Upgrade Plan →
+                  </Link>
                 </div>
               )}
             </>

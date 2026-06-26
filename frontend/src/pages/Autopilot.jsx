@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import AccountSwitcher from '../components/AccountSwitcher'
+import FeatureGate from '../components/FeatureGate'
 
 const geistFontLink = document.createElement('link')
 geistFontLink.rel = 'stylesheet'
@@ -43,6 +44,7 @@ export default function Autopilot() {
   const [awsAccount, setAwsAccount] = useState(null)
   const [latestReport, setLatestReport] = useState(null)
   const [userPlan, setUserPlan] = useState(null)
+  const isPaid = userPlan === 'standard' || userPlan === 'team' || userPlan === 'enterprise'
   const [hasAutopilotRole, setHasAutopilotRole] = useState(false)
 
   // Kept for setup banner (unused by chat, but wired to banner button)
@@ -354,6 +356,7 @@ export default function Autopilot() {
         )}
 
         {/* ── CHAT CONTAINER ── */}
+        <FeatureGate isPaid={isPaid} message="Upgrade to unlock AI-powered cost optimization chat">
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
 
           {/* Messages area */}
@@ -452,6 +455,7 @@ export default function Autopilot() {
             </div>
           </div>
         </div>
+        </FeatureGate>
       </main>
 
       {/* ── MOBILE BOTTOM NAV ── */}
