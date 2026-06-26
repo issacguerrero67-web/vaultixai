@@ -10,13 +10,20 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 router.post('/generate', requireAuth, async (req, res) => {
   try {
     const { name } = req.body
+
+    if (name !== undefined && (typeof name !== 'string' || name.length > 50)) {
+      return res.status(400).json({ error: 'Key name must be under 50 characters.' })
+    }
+
+    const sanitizedName = name ? name.replace(/<[^>]*>/g, '').trim() || 'Default' : 'Default'
+
     const rawKey = 'vx_' + crypto.randomBytes(32).toString('hex')
     const keyHash = crypto.createHash('sha256').update(rawKey).digest('hex')
     const keyPreview = rawKey.substring(0, 12) + '...' + rawKey.substring(rawKey.length - 4)
 
     const { data, error } = await supabase
       .from('api_keys')
-      .insert({ user_id: req.user.id, name: name || 'Default', key_hash: keyHash, key_preview: keyPreview })
+      .insert({ user_id: req.user.id, name: sanitizedName, key_hash: keyHash, key_preview: keyPreview })
       .select()
       .single()
 
@@ -31,7 +38,8 @@ router.post('/generate', requireAuth, async (req, res) => {
       message: 'Save this key now — it will never be shown again.',
     })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    console.error('[ApiKeys] generate error:', err.message)
+    res.status(500).json({ error: 'An internal error occurred. Please try again.' })
   }
 })
 
@@ -47,7 +55,8 @@ router.get('/', requireAuth, async (req, res) => {
 
     res.json({ keys: data || [] })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    console.error('[ApiKeys] list error:', err.message)
+    res.status(500).json({ error: 'An internal error occurred. Please try again.' })
   }
 })
 
@@ -62,7 +71,8 @@ router.delete('/:id', requireAuth, async (req, res) => {
 
     res.json({ success: true })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    console.error('[ApiKeys] revoke error:', err.message)
+    res.status(500).json({ error: 'An internal error occurred. Please try again.' })
   }
 })
 

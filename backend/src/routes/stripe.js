@@ -21,23 +21,41 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET)
   } catch (err) {
-    console.error('Webhook signature verification failed:', err.message)
+    console.error('[Stripe] Webhook signature verification failed:', err.message)
     return res.status(400).send('Webhook signature verification failed')
   }
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object
-    const { userId, tier, savingsAmount } = session.metadata
+    const { userId, tier } = session.metadata
 
     try {
+      // Idempotency check — skip if this event was already processed
+      const { data: existingEvent } = await supabase
+        .from('processed_stripe_events')
+        .select('id')
+        .eq('event_id', event.id)
+        .single()
+
+      if (existingEvent) {
+        console.log('[Stripe] Duplicate event ignored:', event.id)
+        return res.json({ received: true })
+      }
+
       await supabase.from('profiles').upsert({
         id: userId,
         stripe_customer_id: session.customer,
-        plan: tier, // profiles table uses 'plan', not 'tier'
+        plan: tier,
       })
-      console.log('Subscription activated for user:', userId)
+
+      // Mark event as processed
+      await supabase
+        .from('processed_stripe_events')
+        .insert({ event_id: event.id, processed_at: new Date().toISOString() })
+
+      console.log('[Stripe] Subscription activated for user:', userId)
     } catch (err) {
-      console.error('Failed to update profile after payment:', err.message)
+      console.error('[Stripe] Failed to update profile after payment:', err.message)
     }
   }
 
@@ -103,13 +121,12 @@ router.post('/create-checkout', async (req, res, next) => {
 
     res.json({ url: session.url })
   } catch (err) {
+    console.error('[Stripe] create-checkout error:', err.message)
     next(err)
   }
 })
 
 // GET /api/stripe/status
-// profiles table has: plan (text), stripe_customer_id (text)
-// No subscription_status or tier columns yet — map plan → tier, derive status from stripe_customer_id
 router.get('/status', async (req, res) => {
   try {
     const { data: profile, error } = await supabase
@@ -119,7 +136,7 @@ router.get('/status', async (req, res) => {
       .single()
 
     if (error && error.code !== 'PGRST116') {
-      console.error('Profile fetch error:', error)
+      console.error('[Stripe] Profile fetch error:', error.message)
       return res.json({ tier: null, subscriptionStatus: null, stripeCustomerId: null })
     }
 
@@ -129,7 +146,7 @@ router.get('/status', async (req, res) => {
       stripeCustomerId: profile?.stripe_customer_id || null,
     })
   } catch (err) {
-    console.error('Stripe status error:', err.message)
+    console.error('[Stripe] status error:', err.message)
     return res.json({ tier: null, subscriptionStatus: null, stripeCustomerId: null })
   }
 })
@@ -170,8 +187,8 @@ router.get('/invoices', async (req, res) => {
       plan: profile.plan,
     })
   } catch (err) {
-    console.error('Invoices error:', err)
-    res.status(500).json({ error: err.message })
+    console.error('[Stripe] invoices error:', err.message)
+    res.status(500).json({ error: 'An internal error occurred. Please try again.' })
   }
 })
 
@@ -225,7 +242,8 @@ router.get('/savings-summary', async (req, res) => {
       reportCount: reports?.length || 0,
     })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    console.error('[Stripe] savings-summary error:', err.message)
+    res.status(500).json({ error: 'An internal error occurred. Please try again.' })
   }
 })
 

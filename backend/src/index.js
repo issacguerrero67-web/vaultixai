@@ -35,6 +35,33 @@ const strictLimiter = rateLimit({
   message: { error: 'Rate limit reached for this endpoint. Please wait before trying again.' },
 })
 
+// AWS connection attempts — prevent role scanning
+const awsConnectLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many AWS connection attempts.' },
+})
+
+// Destructive account operations
+const destructiveLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests on this endpoint.' },
+})
+
+// API key generation — prevent brute force
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many attempts. Please try again in 15 minutes.' },
+})
+
 const ALLOWED_ORIGINS = [
   'https://vaultixai.app',
   'https://www.vaultixai.app',
@@ -53,18 +80,33 @@ app.use(cors({
   credentials: true,
 }))
 
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.setHeader('X-Frame-Options', 'DENY')
+  res.setHeader('X-XSS-Protection', '1; mode=block')
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  next()
+})
+
 // Skip express.json() for the Stripe webhook — it needs the raw body for signature verification
 app.use((req, res, next) => {
   if (req.originalUrl === '/api/stripe/webhook') {
     next()
   } else {
-    express.json()(req, res, next)
+    express.json({ limit: '10kb' })(req, res, next)
   }
 })
+app.use(express.urlencoded({ extended: true, limit: '10kb' }))
 
 app.use(globalLimiter)
 app.use('/api/autopilot/chat', strictLimiter)
 app.use('/api/audit/run', strictLimiter)
+app.use('/api/aws/verify', awsConnectLimiter)
+app.use('/api/account/user', destructiveLimiter)
+app.use('/api/account/aws-accounts', destructiveLimiter)
+app.use('/api/keys/generate', authLimiter)
 
 app.use('/health', healthRouter)
 app.use('/api/audit', auditRouter)
@@ -78,8 +120,33 @@ app.use('/api/account', accountRouter)
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error(err.stack)
-  res.status(err.status || 500).json({ error: 'Something went wrong. Please try again.' })
+  console.error('[Global Error Handler]', {
+    message: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    timestamp: new Date().toISOString(),
+  })
+  if (res.headersSent) return next(err)
+  res.status(err.status || 500).json({ error: 'An unexpected error occurred. Please try again.' })
+})
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason) => {
+  console.error('[Unhandled Rejection]', {
+    reason: reason?.message || reason,
+    timestamp: new Date().toISOString(),
+  })
+})
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('[Uncaught Exception]', {
+    message: err.message,
+    stack: err.stack,
+    timestamp: new Date().toISOString(),
+  })
+  setTimeout(() => process.exit(1), 1000)
 })
 
 app.listen(PORT, () => {

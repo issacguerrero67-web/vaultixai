@@ -19,7 +19,13 @@ export default function ConnectAWS() {
   const [accountIdError, setAccountIdError] = useState('')
   const [accountIdFocused, setAccountIdFocused] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [externalId] = useState(() => crypto.randomUUID())
+  const [externalId] = useState(() => {
+    const stored = localStorage.getItem('vaultix_connect_external_id')
+    if (stored) return stored
+    const newId = crypto.randomUUID()
+    localStorage.setItem('vaultix_connect_external_id', newId)
+    return newId
+  })
   const [verifying, setVerifying] = useState(false)
   const [verifyStatus, setVerifyStatus] = useState(null) // 'success' | 'error'
   const [error, setError] = useState('')
@@ -72,9 +78,10 @@ export default function ConnectAWS() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ accountId, roleArn }),
+        body: JSON.stringify({ accountId, roleArn, external_id: externalId, account_name: 'My AWS Account' }),
       })
       if (res.ok) {
+        localStorage.removeItem('vaultix_connect_external_id')
         setVerifyStatus('success')
       } else {
         setVerifyStatus('error')

@@ -8,15 +8,36 @@ const router = Router()
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 router.use(requireAuth)
 
 // Generate actions from latest audit
 router.post('/generate', async (req, res, next) => {
   try {
     const { aws_account_id } = req.body
-    const result = await generateAutopilotActions(req.user.id, aws_account_id)
+    const userId = req.user.id
+
+    if (!aws_account_id || !UUID_REGEX.test(aws_account_id)) {
+      return res.status(400).json({ error: 'Invalid aws_account_id.' })
+    }
+
+    // Ownership check
+    const { data: accountCheck } = await supabase
+      .from('aws_accounts')
+      .select('id')
+      .eq('id', aws_account_id)
+      .eq('user_id', userId)
+      .single()
+
+    if (!accountCheck) {
+      return res.status(403).json({ error: 'Access denied.' })
+    }
+
+    const result = await generateAutopilotActions(userId, aws_account_id)
     res.json(result)
   } catch (err) {
+    console.error('[Autopilot] generate error:', err.message)
     next(err)
   }
 })
@@ -25,6 +46,11 @@ router.post('/generate', async (req, res, next) => {
 router.get('/status/:aws_account_id', async (req, res, next) => {
   try {
     const { aws_account_id } = req.params
+
+    if (!UUID_REGEX.test(aws_account_id)) {
+      return res.status(400).json({ error: 'Invalid aws_account_id.' })
+    }
+
     const { data: actions } = await supabase
       .from('autopilot_actions')
       .select('*')
@@ -33,6 +59,7 @@ router.get('/status/:aws_account_id', async (req, res, next) => {
       .order('created_at', { ascending: false })
     res.json({ actions })
   } catch (err) {
+    console.error('[Autopilot] status error:', err.message)
     next(err)
   }
 })
@@ -41,6 +68,14 @@ router.get('/status/:aws_account_id', async (req, res, next) => {
 router.post('/approve', async (req, res, next) => {
   try {
     const { action_id, aws_account_id } = req.body
+
+    if (!action_id || !UUID_REGEX.test(action_id)) {
+      return res.status(400).json({ error: 'Invalid action_id.' })
+    }
+    if (aws_account_id && !UUID_REGEX.test(aws_account_id)) {
+      return res.status(400).json({ error: 'Invalid aws_account_id.' })
+    }
+
     await supabase.from('autopilot_actions')
       .update({ status: 'approved' })
       .eq('id', action_id)
@@ -53,6 +88,7 @@ router.post('/approve', async (req, res, next) => {
     })
     res.json({ success: true })
   } catch (err) {
+    console.error('[Autopilot] approve error:', err.message)
     next(err)
   }
 })
@@ -61,6 +97,11 @@ router.post('/approve', async (req, res, next) => {
 router.post('/skip', async (req, res, next) => {
   try {
     const { action_id, aws_account_id } = req.body
+
+    if (!action_id || !UUID_REGEX.test(action_id)) {
+      return res.status(400).json({ error: 'Invalid action_id.' })
+    }
+
     await supabase.from('autopilot_actions')
       .update({ status: 'skipped' })
       .eq('id', action_id)
@@ -73,6 +114,7 @@ router.post('/skip', async (req, res, next) => {
     })
     res.json({ success: true })
   } catch (err) {
+    console.error('[Autopilot] skip error:', err.message)
     next(err)
   }
 })
@@ -81,9 +123,14 @@ router.post('/skip', async (req, res, next) => {
 router.post('/approve-all', async (req, res, next) => {
   try {
     const { aws_account_id, confirm } = req.body
+
+    if (!aws_account_id || !UUID_REGEX.test(aws_account_id)) {
+      return res.status(400).json({ error: 'Invalid aws_account_id.' })
+    }
     if (confirm !== 'CONFIRM') {
       return res.status(400).json({ error: 'Must send confirm: "CONFIRM" to approve all actions' })
     }
+
     const { data: actions } = await supabase
       .from('autopilot_actions')
       .update({ status: 'approved' })
@@ -99,6 +146,7 @@ router.post('/approve-all', async (req, res, next) => {
     })
     res.json({ success: true, approved: actions?.length || 0 })
   } catch (err) {
+    console.error('[Autopilot] approve-all error:', err.message)
     next(err)
   }
 })
@@ -107,11 +155,18 @@ router.post('/approve-all', async (req, res, next) => {
 router.post('/execute', async (req, res, next) => {
   try {
     const { aws_account_id } = req.body
+    const userId = req.user.id
+
+    if (!aws_account_id || !UUID_REGEX.test(aws_account_id)) {
+      return res.status(400).json({ error: 'Invalid aws_account_id.' })
+    }
+
+    // Ownership check — only fetch actions belonging to this user for this account
     const { data: approved } = await supabase
       .from('autopilot_actions')
       .select('id')
       .eq('aws_account_id', aws_account_id)
-      .eq('user_id', req.user.id)
+      .eq('user_id', userId)
       .eq('status', 'approved')
 
     if (!approved || approved.length === 0) {
@@ -121,15 +176,17 @@ router.post('/execute', async (req, res, next) => {
     const results = []
     for (const action of approved) {
       try {
-        const result = await executeAction(action.id, req.user.id)
+        const result = await executeAction(action.id, userId)
         results.push({ action_id: action.id, success: true, result })
       } catch (err) {
-        results.push({ action_id: action.id, success: false, error: err.message })
+        console.error('[Autopilot] execute action error:', err.message)
+        results.push({ action_id: action.id, success: false, error: 'Action execution failed.' })
       }
     }
 
     res.json({ results })
   } catch (err) {
+    console.error('[Autopilot] execute error:', err.message)
     next(err)
   }
 })
@@ -138,9 +195,15 @@ router.post('/execute', async (req, res, next) => {
 router.post('/rollback', async (req, res, next) => {
   try {
     const { action_id } = req.body
+
+    if (!action_id || !UUID_REGEX.test(action_id)) {
+      return res.status(400).json({ error: 'Invalid action_id.' })
+    }
+
     const result = await rollbackAction(action_id, req.user.id)
     res.json(result)
   } catch (err) {
+    console.error('[Autopilot] rollback error:', err.message)
     next(err)
   }
 })
@@ -151,7 +214,15 @@ router.post('/chat', async (req, res) => {
     const userId = req.user.id
     const { message, aws_account_id, conversation_history = [] } = req.body
 
-    if (!message) return res.status(400).json({ error: 'Message required' })
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ error: 'Message is required.' })
+    }
+    if (message.length > 1000) {
+      return res.status(400).json({ error: 'Message too long. Maximum 1000 characters.' })
+    }
+    if (aws_account_id && !UUID_REGEX.test(aws_account_id)) {
+      return res.status(400).json({ error: 'Invalid aws_account_id.' })
+    }
 
     const { data: profile } = await supabase
       .from('profiles')
@@ -230,8 +301,8 @@ You are not a general-purpose AI. You are their personal AWS cost optimization a
 
     res.json({ reply: response.content[0].text })
   } catch (err) {
-    console.error('Autopilot chat error:', err)
-    res.status(500).json({ error: err.message })
+    console.error('[Autopilot] chat error:', err.message)
+    res.status(500).json({ error: 'An internal error occurred. Please try again.' })
   }
 })
 

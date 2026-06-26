@@ -278,7 +278,7 @@ export default function Settings() {
               style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: '#6b7280', fontSize: 20, cursor: 'pointer' }}>×</button>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: '#ef4444', marginBottom: 12 }}>Delete Account</h2>
             <p style={{ fontSize: 14, color: '#9ca3af', marginBottom: 20, lineHeight: 1.6 }}>
-              This will permanently delete your account, all AWS connections, and all audit history. <strong style={{ color: '#F5F4F0' }}>This cannot be undone.</strong>
+              Your account will be <strong style={{ color: '#F5F4F0' }}>permanently deleted in 30 days</strong>. All AWS connections will be removed immediately. Contact <strong style={{ color: '#F5F4F0' }}>issac@vaultixai.app</strong> within 30 days to cancel.
             </p>
             <input
               type="text"
