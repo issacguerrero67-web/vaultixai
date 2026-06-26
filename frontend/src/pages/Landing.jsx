@@ -3,6 +3,11 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 const MOBILE_CSS = `
+  @keyframes slideProvider {
+    0% { transform: translateX(0px); }
+    100% { transform: translateX(-8px); }
+  }
+
   @media (max-width: 768px) {
     .nav-links { display: none !important; }
 
@@ -277,13 +282,14 @@ export default function Landing() {
         }} />
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 1200, margin: '0 auto', padding: '0 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 48, width: '100%' }}>
           <div style={{ flex: '1 1 auto', minWidth: 0, maxWidth: 560 }}>
-            <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1.75rem' }}>
-              AWS Cost Intelligence
-            </p>
-            <h1 className="hero-h1" style={{ fontSize: 'clamp(2.5rem, 5vw, 3.75rem)', fontWeight: 700, lineHeight: 1.08, letterSpacing: '-0.03em', marginBottom: '1.75rem', color: '#F5F4F0' }}>
-              AWS is charging you for things<br />
-              you <span style={{ color: '#3B82F6' }}>forgot exist.</span>
-            </h1>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.12em', color: '#6b7280', textTransform: 'uppercase', marginBottom: 16 }}>CLOUD COST INTELLIGENCE</div>
+              <h1 className="hero-h1" style={{ fontSize: 52, fontWeight: 800, color: '#F5F4F0', lineHeight: 1.1, marginBottom: 20 }}>
+                You're overpaying<br />
+                your cloud<br />
+                <span style={{ color: '#3B82F6' }}>providers.</span>
+              </h1>
+            </div>
             <p style={{ fontSize: '1.05rem', color: 'rgba(245,244,240,0.5)', lineHeight: 1.75, maxWidth: 460, marginBottom: '2.25rem' }}>
               Connect your AWS account in 5 minutes. We find the waste. You only pay when you save.
             </p>
@@ -310,6 +316,33 @@ export default function Landing() {
             <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>
               No upfront cost · Read-only AWS access · You only pay when we save you money
             </p>
+
+            {/* Provider trust bar */}
+            <div style={{ marginTop: 48, paddingTop: 32, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', color: '#6b7280', textTransform: 'uppercase', marginBottom: 20 }}>
+                SUPPORTED PROVIDERS
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 16, animation: 'slideProvider 4s ease-in-out infinite alternate' }}>
+                  {/* AWS */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20 }}>
+                    <div style={{ width: 18, height: 18, borderRadius: 4, background: '#FF9900', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: 7, fontWeight: 800, color: 'white' }}>AWS</span>
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: '#F5F4F0' }}>Amazon Web Services</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: '#22c55e', background: 'rgba(34,197,94,0.1)', padding: '2px 8px', borderRadius: 10 }}>Live</span>
+                  </div>
+                  {/* Azure */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20 }}>
+                    <div style={{ width: 18, height: 18, borderRadius: 4, background: '#0078D4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: 9, fontWeight: 800, color: 'white' }}>Az</span>
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: '#F5F4F0' }}>Microsoft Azure</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: '#f59e0b', background: 'rgba(245,158,11,0.1)', padding: '2px 8px', borderRadius: 10 }}>Coming Soon</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="stats-card" style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 380, flex: '0 0 380px', marginRight: 0 }}>
