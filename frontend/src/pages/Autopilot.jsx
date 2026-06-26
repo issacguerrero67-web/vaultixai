@@ -96,6 +96,21 @@ export default function Autopilot() {
       const findingsCount = report?.findings?.length ?? 0
       const savings = report?.total_savings ?? 0
 
+      // Load saved chat history — skip welcome message if history exists
+      const savedMessages = localStorage.getItem('vaultix_chat_history')
+      if (savedMessages) {
+        try {
+          const parsed = JSON.parse(savedMessages)
+          if (parsed.length > 0) {
+            setMessages(parsed)
+            setPageLoading(false)
+            return
+          }
+        } catch (e) {
+          // Invalid JSON, start fresh
+        }
+      }
+
       setMessages([{
         role: 'assistant',
         content: `Hi ${profile?.full_name || 'there'}! I'm your Vaultix AI Assistant. I have full context of your AWS account${account ? ` (${account.account_name})` : ''} and your latest audit findings.\n\n${findingsCount > 0 ? `You have **${findingsCount} findings** with $${savings.toLocaleString()}/mo in potential savings. ` : 'No audit found yet — run one from the Dashboard to unlock personalized recommendations. '}What would you like to know about your AWS costs?`,
@@ -109,6 +124,21 @@ export default function Autopilot() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Persist chat history to localStorage on every change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('vaultix_chat_history', JSON.stringify(messages))
+    }
+  }, [messages])
+
+  function clearChat() {
+    localStorage.removeItem('vaultix_chat_history')
+    setMessages([{
+      role: 'assistant',
+      content: `Hi ${displayName || 'there'}! I'm your Vaultix AI Assistant. How can I help you with your AWS costs today?`,
+    }])
+  }
 
   async function sendMessage() {
     if (!input.trim() || loading) return
@@ -169,6 +199,22 @@ export default function Autopilot() {
     setSigningOut(true)
     await supabase.auth.signOut()
     navigate('/login')
+  }
+
+  function renderMarkdown(text) {
+    return text
+      // Bold: **text**
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      // Code block: ```...```
+      .replace(/```[\w]*\n?([\s\S]*?)```/g, '<pre style="background:#111110;border:1px solid #2a2a28;border-radius:6px;padding:10px 12px;overflow-x:auto;font-size:12px;line-height:1.5;margin:8px 0"><code>$1</code></pre>')
+      // Inline code: `text`
+      .replace(/`([^`]+)`/g, '<code style="background:#111110;border:1px solid #2a2a28;border-radius:4px;padding:2px 5px;font-size:12px">$1</code>')
+      // Numbered list
+      .replace(/^(\d+)\. (.+)$/gm, '<div style="margin:3px 0;padding-left:4px"><strong>$1.</strong> $2</div>')
+      // Bullet list
+      .replace(/^[•\-\*] (.+)$/gm, '<div style="margin:3px 0;padding-left:8px">• $1</div>')
+      // Newlines → <br>
+      .replace(/\n/g, '<br/>')
   }
 
   if (pageLoading) {
@@ -244,6 +290,12 @@ export default function Autopilot() {
                 <span style={{ color: '#22c55e', fontWeight: 500 }}>${(latestReport.total_savings ?? 0).toLocaleString()}/mo potential</span>
               </>
             )}
+            <button onClick={clearChat}
+              style={{ marginLeft: 'auto', background: 'none', border: '1px solid #2a2a28', color: '#6b7280', borderRadius: 6, padding: '4px 10px', fontSize: 12, cursor: 'pointer', transition: 'border-color 150ms, color 150ms' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#3B3B38'; e.currentTarget.style.color = '#F5F4F0' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a2a28'; e.currentTarget.style.color = '#6b7280' }}>
+              Clear chat
+            </button>
           </div>
         )}
 
@@ -307,10 +359,13 @@ export default function Autopilot() {
                   fontSize: 14,
                   color: '#F5F4F0',
                   lineHeight: 1.6,
-                  whiteSpace: 'pre-wrap',
+                  whiteSpace: msg.role === 'user' ? 'pre-wrap' : undefined,
                   wordBreak: 'break-word',
                 }}>
-                  {msg.content}
+                  {msg.role === 'user'
+                    ? msg.content
+                    : <span dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }} />
+                  }
                 </div>
               </div>
             ))}
