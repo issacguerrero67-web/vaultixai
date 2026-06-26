@@ -95,8 +95,19 @@ router.post('/run', auditLimiter, async (req, res, next) => {
     }
 
     try {
-      await sendAuditReport(req.user.email, findings, totalSavings, account.account_name)
-      console.log('[Audit] Report email sent to:', req.user.email)
+      const { data: userPrefs } = await supabase
+        .from('profiles')
+        .select('notification_preferences')
+        .eq('id', userId)
+        .single()
+
+      const shouldSendEmail = userPrefs?.notification_preferences?.audit_complete !== false
+      if (shouldSendEmail) {
+        await sendAuditReport(req.user.email, findings, totalSavings, account.account_name)
+        console.log('[Audit] Report email sent to:', req.user.email)
+      } else {
+        console.log('[Audit] Email skipped (user opted out):', req.user.email)
+      }
     } catch (emailErr) {
       console.error('[Audit] Failed to send audit email:', emailErr.message)
     }

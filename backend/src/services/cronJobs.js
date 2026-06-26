@@ -73,8 +73,19 @@ async function runMonthlyRescans() {
         const userEmail = account.profiles?.email
         if (userEmail) {
           try {
-            await sendAuditReport(userEmail, findings, totalSavings, account.account_name)
-            console.log(`[cron] Report email sent to ${userEmail}`)
+            const { data: userPrefs } = await supabase
+              .from('profiles')
+              .select('notification_preferences')
+              .eq('id', account.user_id)
+              .single()
+
+            const shouldSendEmail = userPrefs?.notification_preferences?.monthly_summary !== false
+            if (shouldSendEmail) {
+              await sendAuditReport(userEmail, findings, totalSavings, account.account_name)
+              console.log(`[cron] Report email sent to ${userEmail}`)
+            } else {
+              console.log(`[cron] Email skipped (user opted out): ${userEmail}`)
+            }
           } catch (emailErr) {
             console.error(`[cron] Email failed for account id=${account.id}:`, emailErr.message)
           }
