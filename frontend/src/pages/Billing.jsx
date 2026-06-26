@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
@@ -20,6 +20,29 @@ const NAV_ITEMS = [
 
 const BACKEND_URL = 'https://vaultixai-production.up.railway.app'
 
+const COMPARISON_FEATURES = [
+  { feature: 'AWS account connection',   free: true,    standard: true,              team: true },
+  { feature: 'AI cost audit',            free: true,    standard: true,              team: true },
+  { feature: 'Findings report',          free: true,    standard: true,              team: true },
+  { feature: 'Email report delivery',    free: false,   standard: true,              team: true },
+  { feature: 'Monthly re-scans',         free: false,   standard: true,              team: true },
+  { feature: 'Autopilot AI chat',        free: false,   standard: true,              team: true },
+  { feature: 'Automated fix execution',  free: false,   standard: true,              team: true },
+  { feature: 'Full report history',      free: false,   standard: true,              team: true },
+  { feature: 'Pre-deletion snapshots',   free: false,   standard: true,              team: true },
+  { feature: 'AWS accounts limit',       free: '1',     standard: '3',               team: 'Unlimited' },
+  { feature: 'Slack/webhook alerts',     free: false,   standard: false,             team: true },
+  { feature: 'Priority support',         free: false,   standard: false,             team: true },
+  { feature: 'Quarterly business review',free: false,   standard: false,             team: true },
+  { feature: 'Our fee',                  free: 'Free',  standard: '20% of savings',  team: '15% of savings' },
+]
+
+function CellValue({ val }) {
+  if (val === true)  return <span style={{ color: '#22c55e', fontWeight: 700, fontSize: 15 }}>✓</span>
+  if (val === false) return <span style={{ color: '#444' }}>—</span>
+  return <span style={{ color: '#F5F4F0' }}>{val}</span>
+}
+
 export default function Billing() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -36,6 +59,8 @@ export default function Billing() {
   const [savingsSummary, setSavingsSummary] = useState(null)
   const [profile, setProfile] = useState(null)
   const [checkoutLoading, setCheckoutLoading] = useState(null)
+  const [showPlanCards, setShowPlanCards] = useState(false)
+  const planSectionRef = useRef(null)
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768)
@@ -60,6 +85,8 @@ export default function Billing() {
         .single()
       setProfile(prof)
       if (prof?.full_name) setDisplayName(prof.full_name)
+      const userIsPaid = ['standard', 'team', 'enterprise'].includes(prof?.plan)
+      setShowPlanCards(!userIsPaid)
 
       try {
         const invoicesRes = await fetch(`${BACKEND_URL}/api/stripe/invoices`, {
@@ -210,6 +237,121 @@ export default function Billing() {
               </p>
             </div>
           </div>
+
+          {(() => {
+            const isPaid = ['standard', 'team', 'enterprise'].includes(profile?.plan)
+            const planName = profile?.plan === 'team' ? 'Team Plan' : profile?.plan === 'standard' ? 'Standard Plan' : profile?.plan ? profile.plan : null
+            const planRate = profile?.plan === 'team' ? '15% of savings' : '20% of savings'
+            return (
+              <>
+                {/* ── PLAN STATUS BANNER ── */}
+                {!loading && (
+                  <div style={{
+                    background: isPaid ? 'rgba(34,197,94,0.08)' : 'rgba(251,191,36,0.08)',
+                    border: isPaid ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(251,191,36,0.2)',
+                    borderRadius: 8, padding: '16px 20px', marginBottom: 24,
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
+                  }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: isPaid ? '#22c55e' : '#f59e0b', marginRight: 10, display: 'inline-block', flexShrink: 0 }} />
+                        <span style={{ fontSize: 15, fontWeight: 600, color: '#F5F4F0' }}>
+                          {isPaid ? `You're on the ${planName}` : "You're on the Free tier"}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: 13, color: '#6b7280', margin: 0, paddingLeft: 18 }}>
+                        {isPaid
+                          ? 'Your plan is active. You only pay when we find verified savings.'
+                          : 'Connect AWS and run your first audit for free. Upgrade to unlock AI features.'}
+                      </p>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                      <span style={{
+                        background: isPaid ? 'rgba(34,197,94,0.1)' : 'rgba(251,191,36,0.1)',
+                        border: isPaid ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(251,191,36,0.2)',
+                        color: isPaid ? '#22c55e' : '#f59e0b',
+                        borderRadius: 20, padding: '4px 14px', fontSize: 13, fontWeight: 600,
+                      }}>
+                        {isPaid ? planRate : 'Free'}
+                      </span>
+                      <span style={{ fontSize: 12, color: '#6b7280' }}>
+                        {isPaid ? '✦ Autopilot included' : '🔒 AI features locked'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── SAVINGS ESTIMATE CARD (free users only) ── */}
+                {!loading && !isPaid && savingsSummary && savingsSummary.reportCount > 0 && (
+                  <div style={{ background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8, padding: 24, marginBottom: 24 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: '#3B82F6', marginBottom: 16, textTransform: 'uppercase' }}>
+                      Based on your last audit
+                    </div>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: '#F5F4F0', marginBottom: 8 }}>
+                      You could be saving ${(savingsSummary.latestSavings || 0).toLocaleString()}/mo
+                    </div>
+                    <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 20, margin: '0 0 20px' }}>
+                      Our last scan found {savingsSummary.reportCount} report{savingsSummary.reportCount !== 1 ? 's' : ''} with potential savings. Here's what you're missing without a plan:
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+                      {[
+                        'Autopilot AI chat — get personalized fix recommendations',
+                        'Automated fix execution — let Vaultix fix issues automatically',
+                        'Full report history — access all past audits',
+                      ].map(text => (
+                        <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: '#111110', borderRadius: 6 }}>
+                          <span style={{ fontSize: 16 }}>🔒</span>
+                          <span style={{ fontSize: 14, color: '#9ca3af' }}>{text}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => planSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                      style={{ background: '#3B82F6', color: 'white', border: 'none', borderRadius: 6, padding: '12px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%' }}
+                    >
+                      Unlock All Features →
+                    </button>
+                  </div>
+                )}
+
+                {/* ── FEATURE COMPARISON TABLE ── */}
+                {!loading && (
+                  <div style={{ marginBottom: 28 }}>
+                    <div style={{ fontSize: 16, fontWeight: 600, color: '#F5F4F0', marginBottom: 4 }}>Compare Plans</div>
+                    <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>Everything you get with each plan.</div>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', background: '#1a1a18', borderRadius: 8, overflow: 'hidden', border: '1px solid #2a2a28', minWidth: 480 }}>
+                        <thead>
+                          <tr style={{ background: '#111110' }}>
+                            {[
+                              { label: 'FEATURE', col: null },
+                              { label: 'FREE', col: null },
+                              { label: 'STANDARD', col: 'standard' },
+                              { label: 'TEAM', col: 'team' },
+                            ].map(({ label, col }) => (
+                              <th key={label} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', color: col && profile?.plan === col ? '#3B82F6' : '#6b7280' }}>
+                                {label}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {COMPARISON_FEATURES.map(row => (
+                            <tr key={row.feature}>
+                              <td style={{ padding: '12px 16px', fontSize: 13, borderTop: '1px solid #1e1e1c', color: '#F5F4F0' }}>{row.feature}</td>
+                              <td style={{ padding: '12px 16px', fontSize: 13, borderTop: '1px solid #1e1e1c' }}><CellValue val={row.free} /></td>
+                              <td style={{ padding: '12px 16px', fontSize: 13, borderTop: '1px solid #1e1e1c', background: profile?.plan === 'standard' ? 'rgba(59,130,246,0.04)' : 'transparent' }}><CellValue val={row.standard} /></td>
+                              <td style={{ padding: '12px 16px', fontSize: 13, borderTop: '1px solid #1e1e1c', background: profile?.plan === 'team' ? 'rgba(59,130,246,0.04)' : 'transparent' }}><CellValue val={row.team} /></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </>
+            )
+          })()}
 
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -365,109 +507,115 @@ export default function Billing() {
                 )}
               </div>
 
-              {/* ── SECTION 4: PLAN SELECTION ── */}
-              <div style={{ marginBottom: 8 }}>
-                <div style={{ fontSize: 15, fontWeight: 600, color: '#F5F4F0', marginBottom: 4 }}>
-                  {hasSubscription ? 'Change Plan' : 'Choose a Plan'}
-                </div>
-                <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 20 }}>
-                  {hasSubscription
-                    ? 'Upgrade or switch your plan at any time.'
-                    : 'You only pay when we find real savings. Your plan activates after your first audit.'}
-                </div>
-              </div>
-
-              {!hasSubscription && (
-                <div style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 8, padding: '14px 18px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                  <span style={{ color: '#3B82F6', fontSize: 16 }}>ℹ</span>
-                  <span style={{ color: '#9ca3af', fontSize: 14, lineHeight: 1.5 }}>
-                    You only pay when we find real savings. Your plan activates automatically after your first audit identifies waste in your AWS account.
-                  </span>
-                </div>
-              )}
-
-              {/* Standard plan card */}
-              <div style={{ background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8, padding: 24, marginBottom: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                  <div>
-                    <span style={{ fontSize: 18, fontWeight: 700, color: '#F5F4F0' }}>Standard</span>
-                    <span style={{ fontSize: 13, color: '#6b7280', marginLeft: 10 }}>— For startups and small teams</span>
-                  </div>
-                  {profile?.plan === 'standard' && hasSubscription && (
-                    <span style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#3B82F6', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>
-                      Current
-                    </span>
-                  )}
-                </div>
-                <div style={{ marginBottom: 16 }}>
-                  <span style={{ fontSize: 28, fontWeight: 700, color: '#F5F4F0' }}>20%</span>
-                  <span style={{ fontSize: 13, color: '#6b7280', marginLeft: 6 }}>of verified savings</span>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 20px', marginBottom: 20 }}>
-                  {['Up to 3 AWS accounts', 'Full AI cost audit', 'Monthly re-scans', 'Email findings report', 'Autopilot — automated fix execution', 'Pre-deletion snapshots & rollback'].map(f => (
-                    <span key={f} style={{ fontSize: 13, color: '#9ca3af' }}>✓ {f}</span>
-                  ))}
-                </div>
+              {/* ── SECTION 4: PLAN SELECTION (collapsible) ── */}
+              <div ref={planSectionRef}>
                 <button
-                  onClick={() => !(profile?.plan === 'standard' && hasSubscription) && startCheckout('standard')}
-                  disabled={(profile?.plan === 'standard' && hasSubscription) || checkoutLoading === 'standard'}
+                  onClick={() => setShowPlanCards(v => !v)}
                   style={{
-                    background: (profile?.plan === 'standard' && hasSubscription) ? '#2a2a28' : '#3B82F6',
-                    color: (profile?.plan === 'standard' && hasSubscription) ? '#6b7280' : 'white',
-                    border: 'none', borderRadius: 6, padding: '12px 20px', fontSize: 14,
-                    fontWeight: 600,
-                    cursor: (profile?.plan === 'standard' && hasSubscription) ? 'not-allowed' : checkoutLoading === 'standard' ? 'not-allowed' : 'pointer',
-                    width: '100%', transition: 'background 150ms',
+                    width: '100%', background: 'none', border: '1px solid #2a2a28', borderRadius: 8,
+                    padding: '14px 20px', color: '#F5F4F0', fontSize: 14, fontWeight: 500, cursor: 'pointer',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    marginBottom: showPlanCards ? 16 : 0,
                   }}
                 >
-                  {(profile?.plan === 'standard' && hasSubscription) ? 'Current Plan' : checkoutLoading === 'standard' ? 'Loading...' : 'Start Standard Plan (20% of savings)'}
+                  <span>{['standard','team','enterprise'].includes(profile?.plan) ? 'Switch or upgrade your plan' : 'Choose a plan to get started'}</span>
+                  <span style={{ color: '#6b7280', fontSize: 13 }}>{showPlanCards ? '▲ Hide' : '▼ Show plans'}</span>
                 </button>
-              </div>
 
-              {/* Team plan card */}
-              <div style={{ background: '#1a1a18', border: '1px solid #3B82F6', borderRadius: 8, padding: 24, marginBottom: 16, position: 'relative' }}>
-                <span style={{ position: 'absolute', top: -10, left: 20, background: '#3B82F6', color: 'white', borderRadius: 4, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>
-                  MOST POPULAR
-                </span>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                  <div>
-                    <span style={{ fontSize: 18, fontWeight: 700, color: '#F5F4F0' }}>Team</span>
-                    <span style={{ fontSize: 13, color: '#6b7280', marginLeft: 10 }}>— For growing engineering teams</span>
-                  </div>
-                  {profile?.plan === 'team' && hasSubscription && (
-                    <span style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#3B82F6', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>
-                      Current
-                    </span>
-                  )}
-                </div>
-                <div style={{ marginBottom: 16 }}>
-                  <span style={{ fontSize: 28, fontWeight: 700, color: '#F5F4F0' }}>15%</span>
-                  <span style={{ fontSize: 13, color: '#6b7280', marginLeft: 6 }}>of verified savings</span>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 20px', marginBottom: 20 }}>
-                  {['Unlimited AWS accounts', 'Everything in Standard', 'Autopilot included', 'Slack alerts', 'Priority support', 'Quarterly business review'].map(f => (
-                    <span key={f} style={{ fontSize: 13, color: '#9ca3af' }}>✓ {f}</span>
-                  ))}
-                </div>
-                <button
-                  onClick={() => !(profile?.plan === 'team' && hasSubscription) && startCheckout('team')}
-                  disabled={(profile?.plan === 'team' && hasSubscription) || checkoutLoading === 'team'}
-                  style={{
-                    background: (profile?.plan === 'team' && hasSubscription) ? '#2a2a28' : '#3B82F6',
-                    color: (profile?.plan === 'team' && hasSubscription) ? '#6b7280' : 'white',
-                    border: 'none', borderRadius: 6, padding: '12px 20px', fontSize: 14,
-                    fontWeight: 600,
-                    cursor: (profile?.plan === 'team' && hasSubscription) ? 'not-allowed' : checkoutLoading === 'team' ? 'not-allowed' : 'pointer',
-                    width: '100%', transition: 'background 150ms',
-                  }}
-                >
-                  {(profile?.plan === 'team' && hasSubscription) ? 'Current Plan' : checkoutLoading === 'team' ? 'Loading...' : 'Start Team Plan (15% of savings)'}
-                </button>
-              </div>
+                {showPlanCards && (
+                  <>
+                    {!hasSubscription && (
+                      <div style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 8, padding: '14px 18px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                        <span style={{ color: '#3B82F6', fontSize: 16 }}>ℹ</span>
+                        <span style={{ color: '#9ca3af', fontSize: 14, lineHeight: 1.5 }}>
+                          You only pay when we find real savings. Your plan activates automatically after your first audit identifies waste in your AWS account.
+                        </span>
+                      </div>
+                    )}
 
-              <div style={{ textAlign: 'center', marginTop: 24, color: '#6b7280', fontSize: 13 }}>
-                Payments processed securely by Stripe.{' · '}
-                <a href="mailto:issac@vaultixai.app" style={{ color: '#3B82F6', textDecoration: 'none' }}>Need help? Contact us</a>
+                    {/* Standard plan card */}
+                    <div style={{ background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8, padding: 24, marginBottom: 16 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                        <div>
+                          <span style={{ fontSize: 18, fontWeight: 700, color: '#F5F4F0' }}>Standard</span>
+                          <span style={{ fontSize: 13, color: '#6b7280', marginLeft: 10 }}>— For startups and small teams</span>
+                        </div>
+                        {profile?.plan === 'standard' && hasSubscription && (
+                          <span style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#3B82F6', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>
+                            Current
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ marginBottom: 16 }}>
+                        <span style={{ fontSize: 28, fontWeight: 700, color: '#F5F4F0' }}>20%</span>
+                        <span style={{ fontSize: 13, color: '#6b7280', marginLeft: 6 }}>of verified savings</span>
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 20px', marginBottom: 20 }}>
+                        {['Up to 3 AWS accounts', 'Full AI cost audit', 'Monthly re-scans', 'Email findings report', 'Autopilot — automated fix execution', 'Pre-deletion snapshots & rollback'].map(f => (
+                          <span key={f} style={{ fontSize: 13, color: '#9ca3af' }}>✓ {f}</span>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => !(profile?.plan === 'standard' && hasSubscription) && startCheckout('standard')}
+                        disabled={(profile?.plan === 'standard' && hasSubscription) || checkoutLoading === 'standard'}
+                        style={{
+                          background: (profile?.plan === 'standard' && hasSubscription) ? '#2a2a28' : '#3B82F6',
+                          color: (profile?.plan === 'standard' && hasSubscription) ? '#6b7280' : 'white',
+                          border: 'none', borderRadius: 6, padding: '12px 20px', fontSize: 14, fontWeight: 600,
+                          cursor: (profile?.plan === 'standard' && hasSubscription) ? 'not-allowed' : checkoutLoading === 'standard' ? 'not-allowed' : 'pointer',
+                          width: '100%', transition: 'background 150ms',
+                        }}
+                      >
+                        {(profile?.plan === 'standard' && hasSubscription) ? 'Current Plan' : checkoutLoading === 'standard' ? 'Loading...' : 'Start Standard Plan (20% of savings)'}
+                      </button>
+                    </div>
+
+                    {/* Team plan card */}
+                    <div style={{ background: '#1a1a18', border: '1px solid #3B82F6', borderRadius: 8, padding: 24, marginBottom: 16, position: 'relative' }}>
+                      <span style={{ position: 'absolute', top: -10, left: 20, background: '#3B82F6', color: 'white', borderRadius: 4, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>
+                        MOST POPULAR
+                      </span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                        <div>
+                          <span style={{ fontSize: 18, fontWeight: 700, color: '#F5F4F0' }}>Team</span>
+                          <span style={{ fontSize: 13, color: '#6b7280', marginLeft: 10 }}>— For growing engineering teams</span>
+                        </div>
+                        {profile?.plan === 'team' && hasSubscription && (
+                          <span style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#3B82F6', borderRadius: 20, padding: '3px 10px', fontSize: 11, fontWeight: 600 }}>
+                            Current
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ marginBottom: 16 }}>
+                        <span style={{ fontSize: 28, fontWeight: 700, color: '#F5F4F0' }}>15%</span>
+                        <span style={{ fontSize: 13, color: '#6b7280', marginLeft: 6 }}>of verified savings</span>
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 20px', marginBottom: 20 }}>
+                        {['Unlimited AWS accounts', 'Everything in Standard', 'Autopilot included', 'Slack alerts', 'Priority support', 'Quarterly business review'].map(f => (
+                          <span key={f} style={{ fontSize: 13, color: '#9ca3af' }}>✓ {f}</span>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => !(profile?.plan === 'team' && hasSubscription) && startCheckout('team')}
+                        disabled={(profile?.plan === 'team' && hasSubscription) || checkoutLoading === 'team'}
+                        style={{
+                          background: (profile?.plan === 'team' && hasSubscription) ? '#2a2a28' : '#3B82F6',
+                          color: (profile?.plan === 'team' && hasSubscription) ? '#6b7280' : 'white',
+                          border: 'none', borderRadius: 6, padding: '12px 20px', fontSize: 14, fontWeight: 600,
+                          cursor: (profile?.plan === 'team' && hasSubscription) ? 'not-allowed' : checkoutLoading === 'team' ? 'not-allowed' : 'pointer',
+                          width: '100%', transition: 'background 150ms',
+                        }}
+                      >
+                        {(profile?.plan === 'team' && hasSubscription) ? 'Current Plan' : checkoutLoading === 'team' ? 'Loading...' : 'Start Team Plan (15% of savings)'}
+                      </button>
+                    </div>
+
+                    <div style={{ textAlign: 'center', marginTop: 24, color: '#6b7280', fontSize: 13 }}>
+                      Payments processed securely by Stripe.{' · '}
+                      <a href="mailto:issac@vaultixai.app" style={{ color: '#3B82F6', textDecoration: 'none' }}>Need help? Contact us</a>
+                    </div>
+                  </>
+                )}
               </div>
             </>
           )}
