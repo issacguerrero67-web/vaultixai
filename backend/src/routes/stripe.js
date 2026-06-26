@@ -139,22 +139,92 @@ router.get('/invoices', async (req, res) => {
   try {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('stripe_customer_id')
+      .select('stripe_customer_id, plan')
       .eq('id', req.user.id)
       .single()
 
     if (!profile?.stripe_customer_id) {
-      return res.json({ invoices: [] })
+      return res.json({ invoices: [], hasSubscription: false })
     }
 
     const invoices = await stripe.invoices.list({
       customer: profile.stripe_customer_id,
-      limit: 10,
+      limit: 24,
+      expand: ['data.subscription'],
     })
 
-    res.json({ invoices: invoices.data })
+    let subscription = null
+    try {
+      const subs = await stripe.subscriptions.list({
+        customer: profile.stripe_customer_id,
+        status: 'active',
+        limit: 1,
+      })
+      subscription = subs.data[0] || null
+    } catch (e) {}
+
+    res.json({
+      invoices: invoices.data,
+      subscription,
+      hasSubscription: !!subscription,
+      plan: profile.plan,
+    })
   } catch (err) {
     console.error('Invoices error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/stripe/savings-summary
+router.get('/savings-summary', async (req, res) => {
+  try {
+    const userId = req.user.id
+
+    const { data: reports } = await supabase
+      .from('audit_reports')
+      .select('total_savings, created_at, aws_account_id')
+      .eq('user_id', userId)
+      .eq('status', 'complete')
+      .order('created_at', { ascending: false })
+      .limit(12)
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('stripe_customer_id, plan')
+      .eq('id', userId)
+      .single()
+
+    const totalSavingsFound = reports?.reduce((sum, r) => sum + (r.total_savings || 0), 0) || 0
+    const latestSavings = reports?.[0]?.total_savings || 0
+    const rate = profile?.plan === 'team' ? 0.15 : 0.20
+    const latestFee = latestSavings * rate
+    const netSavings = latestSavings - latestFee
+    const roi = latestFee > 0 ? (latestSavings / latestFee).toFixed(1) : null
+
+    let totalPaid = 0
+    if (profile?.stripe_customer_id) {
+      try {
+        const invoices = await stripe.invoices.list({
+          customer: profile.stripe_customer_id,
+          status: 'paid',
+          limit: 100,
+        })
+        totalPaid = invoices.data.reduce((sum, inv) => sum + (inv.amount_paid || 0), 0) / 100
+      } catch (e) {}
+    }
+
+    res.json({
+      latestSavings,
+      latestFee,
+      netSavings,
+      roi,
+      totalSavingsFound,
+      totalPaid,
+      rate,
+      plan: profile?.plan,
+      reportCount: reports?.length || 0,
+    })
+  } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
