@@ -83,12 +83,6 @@ export default function Settings() {
   })
   const [notifSaved, setNotifSaved] = useState(false)
 
-  // Scan preferences
-  const [scanPrefs, setScanPrefs] = useState({
-    regions: ['us-east-1'], services: ['EC2', 'RDS', 'S3', 'EBS', 'Network'],
-  })
-  const [scanSaved, setScanSaved] = useState(false)
-
   // Developer settings
   const [devExpanded, setDevExpanded] = useState(false)
   const [apiKeys, setApiKeys] = useState([])
@@ -128,7 +122,6 @@ export default function Settings() {
         setProfile(prof)
         setDisplayName(prof.full_name ?? '')
         if (prof.notification_preferences) setNotifications(prof.notification_preferences)
-        if (prof.scan_preferences) setScanPrefs(prof.scan_preferences)
         if (prof.webhook_url) setWebhookUrl(prof.webhook_url)
       }
       if (accountsRes.data) setAwsAccounts(accountsRes.data)
@@ -175,11 +168,6 @@ export default function Settings() {
     setNotifSaved(true); setTimeout(() => setNotifSaved(false), 3000)
   }
 
-  async function handleSaveScanPrefs() {
-    await supabase.from('profiles').update({ scan_preferences: scanPrefs }).eq('id', userId)
-    setScanSaved(true); setTimeout(() => setScanSaved(false), 3000)
-  }
-
   async function handleGenerateKey() {
     if (!newKeyName.trim()) return
     try {
@@ -223,27 +211,6 @@ export default function Settings() {
     await supabase.auth.signOut()
     navigate('/login')
   }
-
-  function toggleRegion(region) {
-    setScanPrefs(prev => ({
-      ...prev,
-      regions: prev.regions.includes(region)
-        ? prev.regions.filter(r => r !== region)
-        : [...prev.regions, region],
-    }))
-  }
-
-  function toggleService(service) {
-    setScanPrefs(prev => ({
-      ...prev,
-      services: prev.services.includes(service)
-        ? prev.services.filter(s => s !== service)
-        : [...prev.services, service],
-    }))
-  }
-
-  const ALL_REGIONS = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'eu-west-1', 'eu-west-2', 'eu-central-1', 'ap-southeast-1', 'ap-northeast-1']
-  const ALL_SERVICES = ['EC2', 'RDS', 'S3', 'EBS', 'Network', 'SavingsPlans']
 
   if (loading) {
     return (
@@ -453,50 +420,7 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* ── SECTION 4: SCAN PREFERENCES ── */}
-          <div style={CARD_STYLE}>
-            <div style={LABEL_STYLE}>Scan Preferences</div>
-
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 10 }}>Regions to scan</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {ALL_REGIONS.map(r => {
-                  const selected = scanPrefs.regions.includes(r)
-                  return (
-                    <button key={r} onClick={() => toggleRegion(r)}
-                      style={{ background: selected ? 'rgba(59,130,246,0.15)' : '#1a1a18', border: `1px solid ${selected ? '#3B82F6' : '#2a2a28'}`, color: selected ? '#3B82F6' : '#6b7280', borderRadius: 6, padding: '6px 12px', fontSize: 12, cursor: 'pointer', fontWeight: selected ? 500 : 400, transition: 'all 150ms' }}>
-                      {r}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 10 }}>Services to include</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {ALL_SERVICES.map(s => {
-                  const selected = scanPrefs.services.includes(s)
-                  return (
-                    <button key={s} onClick={() => toggleService(s)}
-                      style={{ background: selected ? 'rgba(59,130,246,0.15)' : '#1a1a18', border: `1px solid ${selected ? '#3B82F6' : '#2a2a28'}`, color: selected ? '#3B82F6' : '#6b7280', borderRadius: 6, padding: '6px 12px', fontSize: 12, cursor: 'pointer', fontWeight: selected ? 500 : 400, transition: 'all 150ms' }}>
-                      {s}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button onClick={handleSaveScanPrefs}
-                style={{ background: '#3B82F6', color: '#fff', border: 'none', borderRadius: 6, padding: '9px 18px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                Save Preferences
-              </button>
-              {scanSaved && <span style={{ fontSize: 12, color: '#22c55e' }}>Saved!</span>}
-            </div>
-          </div>
-
-          {/* ── SECTION 5: DEVELOPER SETTINGS (collapsible) ── */}
+          {/* ── SECTION 4: DEVELOPER SETTINGS (collapsible) ── */}
           <div style={{ marginBottom: 20 }}>
             <div
               onClick={() => setDevExpanded(!devExpanded)}
