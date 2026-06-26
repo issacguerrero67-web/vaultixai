@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
+import { rateLimit } from 'express-rate-limit'
 
 import healthRouter from './routes/health.js'
 import auditRouter from './routes/audit.js'
@@ -14,6 +15,24 @@ import { startCronJobs } from './services/cronJobs.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
+
+// 100 requests per 15 minutes per IP across all routes
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please try again later.' },
+})
+
+// 10 requests per 15 minutes per IP — expensive AI/AWS routes
+const strictLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Rate limit reached for this endpoint. Please wait before trying again.' },
+})
 
 const ALLOWED_ORIGINS = [
   'https://vaultixai.app',
@@ -41,6 +60,10 @@ app.use((req, res, next) => {
     express.json()(req, res, next)
   }
 })
+
+app.use(globalLimiter)
+app.use('/api/autopilot/chat', strictLimiter)
+app.use('/api/audit/run', strictLimiter)
 
 app.use('/health', healthRouter)
 app.use('/api/audit', auditRouter)
