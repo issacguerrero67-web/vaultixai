@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { createClient } from '@supabase/supabase-js'
+import Anthropic from '@anthropic-ai/sdk'
 import { requireAuth } from '../middleware/auth.js'
 import { generateAutopilotActions, executeAction, rollbackAction } from '../services/autopilotEngine.js'
 
@@ -218,7 +219,6 @@ You are not a general-purpose AI. You are their personal AWS cost optimization a
       { role: 'user', content: message },
     ]
 
-    const Anthropic = (await import('@anthropic-ai/sdk')).default
     const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
     const response = await anthropic.messages.create({
