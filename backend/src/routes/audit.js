@@ -78,7 +78,40 @@ router.post('/run', auditLimiter, async (req, res, next) => {
       console.log('Audit report email sent to:', req.user.email)
     } catch (emailErr) {
       console.error('Failed to send audit email:', emailErr.message)
-      // Don't fail the request if email fails
+    }
+
+    try {
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('webhook_url, notification_preferences')
+        .eq('id', req.user.id)
+        .single()
+
+      if (userProfile?.webhook_url && userProfile?.notification_preferences?.audit_complete !== false) {
+        const webhookPayload = {
+          event: 'audit.complete',
+          timestamp: new Date().toISOString(),
+          data: {
+            account_name: account.account_name,
+            findings_count: findings.length,
+            total_savings: totalSavings,
+            severity_counts: {
+              high: findings.filter(f => f.severity === 'high').length,
+              medium: findings.filter(f => f.severity === 'medium').length,
+              low: findings.filter(f => f.severity === 'low').length,
+            },
+            report_url: `${process.env.FRONTEND_URL}/dashboard/reports`,
+          },
+        }
+
+        await fetch(userProfile.webhook_url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(webhookPayload),
+        })
+      }
+    } catch (webhookErr) {
+      console.error('Webhook delivery failed:', webhookErr.message)
     }
 
     res.json({ success: true, reportId: report.id, findings, totalSavings })

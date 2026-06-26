@@ -158,9 +158,16 @@ export default function Settings() {
   }
 
   async function handleDisconnectAll() {
-    await supabase.from('aws_accounts').delete().eq('user_id', userId)
-    setAwsAccounts([])
-    setDisconnectAllConfirm(false)
+    try {
+      await fetch(`${BACKEND_URL}/api/account/aws-accounts`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${sessionToken}` },
+      })
+      setAwsAccounts([])
+      setDisconnectAllConfirm(false)
+    } catch (err) {
+      console.error('Failed to disconnect all accounts:', err)
+    }
   }
 
   async function handleSaveNotifications() {
@@ -288,8 +295,23 @@ export default function Settings() {
               <button
                 disabled={confirmDelete !== 'DELETE'}
                 onClick={async () => {
-                  await supabase.auth.signOut()
-                  navigate('/login')
+                  if (confirmDelete !== 'DELETE') return
+                  try {
+                    const res = await fetch(`${BACKEND_URL}/api/account/user`, {
+                      method: 'DELETE',
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sessionToken}` },
+                      body: JSON.stringify({ confirm: 'DELETE' }),
+                    })
+                    const data = await res.json()
+                    if (data.success) {
+                      await supabase.auth.signOut()
+                      window.location.href = '/'
+                    } else {
+                      alert('Error: ' + (data.error || 'Unknown error'))
+                    }
+                  } catch (err) {
+                    alert('Something went wrong. Please try again.')
+                  }
                 }}
                 style={{ flex: 1, background: confirmDelete === 'DELETE' ? '#ef4444' : '#1a1a18', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, color: confirmDelete === 'DELETE' ? '#fff' : '#555', fontSize: 14, fontWeight: 600, padding: '10px', cursor: confirmDelete === 'DELETE' ? 'pointer' : 'not-allowed', transition: 'background 150ms' }}>
                 Delete Account
