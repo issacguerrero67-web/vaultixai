@@ -40,7 +40,7 @@ const STATS = [
   { stat: '3x',    label: 'Average ROI in the first 30 days for Standard plan customers' },
 ]
 
-function StatsCard() {
+function HeroRightColumn() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [visible, setVisible] = useState(true)
   const intervalRef = useRef(null)
@@ -59,44 +59,69 @@ function StatsCard() {
   const stat = STATS[currentIndex]
 
   return (
-    <div style={{
-      background: 'rgba(255,255,255,0.03)',
-      border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: 16,
-      padding: '40px 36px',
-      width: '100%',
-      maxWidth: 380,
-      minHeight: 220,
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      position: 'relative',
-      overflow: 'hidden',
-      flexShrink: 0,
-      boxSizing: 'border-box',
-    }}>
-      <div style={{ opacity: visible ? 1 : 0, transition: 'opacity 400ms ease' }}>
-        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', color: '#3B82F6', textTransform: 'uppercase', marginBottom: 12, margin: '0 0 12px' }}>
-          AWS BY THE NUMBERS
-        </p>
-        <p style={{ fontSize: 64, fontWeight: 800, color: '#F5F4F0', lineHeight: 1, margin: '0 0 12px' }}>
-          {stat.stat}
-        </p>
-        <p style={{ fontSize: 15, color: '#6b7280', lineHeight: 1.5, maxWidth: 260, margin: 0 }}>
-          {stat.label}
-        </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 420, flexShrink: 0 }}>
+
+      {/* Card 1 — rotating stat */}
+      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '28px 32px', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ opacity: visible ? 1 : 0, transition: 'opacity 400ms ease' }}>
+          <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', color: '#3B82F6', textTransform: 'uppercase', margin: '0 0 10px' }}>
+            AWS BY THE NUMBERS
+          </p>
+          <p style={{ fontSize: 72, fontWeight: 800, color: '#F5F4F0', lineHeight: 1, margin: '0 0 8px' }}>
+            {stat.stat}
+          </p>
+          <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.5, margin: 0 }}>
+            {stat.label}
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 6, marginTop: 20 }}>
+          {STATS.map((_, i) => (
+            <div key={i} style={{
+              width: i === currentIndex ? 20 : 4,
+              height: 4,
+              borderRadius: 2,
+              background: i === currentIndex ? '#3B82F6' : '#2a2a28',
+              transition: 'width 300ms ease, background 300ms ease',
+            }} />
+          ))}
+        </div>
       </div>
-      <div style={{ display: 'flex', gap: 6, marginTop: 28 }}>
-        {STATS.map((_, i) => (
-          <div key={i} style={{
-            width: i === currentIndex ? 20 : 4,
-            height: 4,
-            borderRadius: 2,
-            background: i === currentIndex ? '#3B82F6' : '#2a2a28',
-            transition: 'width 300ms ease, background 300ms ease',
-          }} />
-        ))}
+
+      {/* Card 2 — how it works mini steps */}
+      <div style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 12, padding: '20px 24px' }}>
+        <p style={{ fontSize: 12, fontWeight: 600, color: '#3B82F6', marginBottom: 14, letterSpacing: '0.05em', margin: '0 0 14px' }}>
+          HOW IT WORKS
+        </p>
+        <div style={{ display: 'flex', gap: 0, alignItems: 'flex-start' }}>
+          {[
+            { num: 1, label: 'Connect AWS in 5 min' },
+            { num: 2, label: 'AI scans for waste' },
+            { num: 3, label: 'Pay only on savings' },
+          ].map((step, i) => (
+            <div key={step.num} style={{ display: 'flex', alignItems: 'flex-start', flex: 1 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, textAlign: 'center' }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#3B82F6', color: 'white', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                  {step.num}
+                </div>
+                <span style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1.4 }}>{step.label}</span>
+              </div>
+              {i < 2 && (
+                <div style={{ flex: 0, width: 24, height: 1, background: '#2a2a28', marginTop: 14, flexShrink: 0 }} />
+              )}
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* Card 3 — zero risk callout */}
+      <div style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 12, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
+        <span style={{ color: '#22c55e', fontWeight: 800, fontSize: 28, flexShrink: 0 }}>✓</span>
+        <div>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#F5F4F0', margin: '0 0 4px' }}>Zero upfront cost. Zero risk.</p>
+          <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>Read-only AWS access. We can't touch your infrastructure without your approval.</p>
+        </div>
+      </div>
+
     </div>
   )
 }
@@ -288,7 +313,7 @@ export default function Landing() {
           </div>
 
           <div className="stats-card">
-            <StatsCard />
+            <HeroRightColumn />
           </div>
         </div>
       </section>
