@@ -321,10 +321,12 @@ export default function Dashboard() {
           padding: '20px 32px',
           borderBottom: '1px solid #1E1E1C',
           display: 'flex',
-          alignItems: runningAudit ? 'flex-start' : 'center',
+          alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 8,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0, flexShrink: 0 }}>
             <h1 style={{ fontSize: isMobile ? 18 : 24, fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em', flexShrink: 0 }}>
               Dashboard
             </h1>
@@ -333,7 +335,7 @@ export default function Dashboard() {
               onAccountChange={handleAccountSwitch}
             />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
             <Link
               to="/dashboard/reports"
               style={{
@@ -362,6 +364,8 @@ export default function Dashboard() {
                 cursor: (runningAudit || awsConnected === false) ? 'not-allowed' : 'pointer',
                 opacity: runningAudit ? 0.7 : awsConnected === false ? 0.4 : 1,
                 transition: 'transform 150ms, box-shadow 150ms',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
               }}
               onMouseEnter={e => { if (!runningAudit && awsConnected !== false) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' } }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}

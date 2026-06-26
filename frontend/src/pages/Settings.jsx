@@ -458,13 +458,13 @@ export default function Settings() {
                 <div style={LABEL_STYLE}>API Keys</div>
                 <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16, marginTop: 0 }}>Use API keys to access your Vaultix data programmatically.</p>
 
-                <div style={{ display: 'flex', gap: 10, marginBottom: generatedKey ? 16 : 20 }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: generatedKey ? 16 : 20 }}>
                   <input type="text" placeholder="Key name (e.g. Production)" value={newKeyName}
                     onChange={e => setNewKeyName(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') handleGenerateKey() }}
-                    style={{ background: '#111110', border: '1px solid #2a2a28', borderRadius: 6, padding: '9px 14px', color: '#F5F4F0', fontSize: 14, flex: 1, outline: 'none' }} />
+                    style={{ background: '#111110', border: '1px solid #2a2a28', borderRadius: 6, padding: '9px 14px', color: '#F5F4F0', fontSize: 14, flex: '1 1 200px', minWidth: 0, outline: 'none' }} />
                   <button onClick={handleGenerateKey}
-                    style={{ background: '#3B82F6', color: 'white', border: 'none', borderRadius: 6, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    style={{ background: '#3B82F6', color: 'white', border: 'none', borderRadius: 6, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
                     Generate Key
                   </button>
                 </div>
@@ -513,12 +513,12 @@ export default function Settings() {
                 <div style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid #2a2a28' }}>
                   <div style={LABEL_STYLE}>Webhook URL</div>
                   <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 12, marginTop: 0 }}>Receive notifications in Slack or Teams when audits complete.</p>
-                  <div style={{ display: 'flex', gap: 10 }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <input type="url" placeholder="https://hooks.slack.com/..." value={webhookUrl}
                       onChange={e => setWebhookUrl(e.target.value)}
-                      style={{ background: '#111110', border: '1px solid #2a2a28', borderRadius: 6, padding: '9px 14px', color: '#F5F4F0', fontSize: 14, flex: 1, outline: 'none' }} />
+                      style={{ background: '#111110', border: '1px solid #2a2a28', borderRadius: 6, padding: '9px 14px', color: '#F5F4F0', fontSize: 14, flex: '1 1 200px', minWidth: 0, outline: 'none' }} />
                     <button onClick={handleSaveWebhook}
-                      style={{ background: '#3B82F6', color: 'white', border: 'none', borderRadius: 6, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      style={{ background: '#3B82F6', color: 'white', border: 'none', borderRadius: 6, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
                       Save Webhook
                     </button>
                   </div>

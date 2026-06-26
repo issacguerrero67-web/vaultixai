@@ -319,8 +319,9 @@ export default function Reports() {
         <div style={{
           padding: '20px 32px', borderBottom: '1px solid #1E1E1C',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexWrap: 'wrap', gap: 8,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0, flexShrink: 0 }}>
             <h1 style={{ fontSize: 18, fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em', flexShrink: 0 }}>
               Reports
             </h1>
@@ -339,6 +340,7 @@ export default function Reports() {
               cursor: runningAudit ? 'not-allowed' : 'pointer',
               opacity: runningAudit ? 0.7 : 1,
               transition: 'transform 150ms, box-shadow 150ms',
+              whiteSpace: 'nowrap', flexShrink: 0,
             }}
             onMouseEnter={e => { if (!runningAudit) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' } }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
