@@ -263,7 +263,7 @@ export default function Landing() {
       {/* HERO */}
       <section className="hero-section" style={{
         position: 'relative', minHeight: '100vh', display: 'flex',
-        alignItems: 'center', padding: '8rem 2.5rem 5rem', overflow: 'hidden'
+        alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
       }}>
         <div style={{
           position: 'absolute', inset: 0,
@@ -275,7 +275,7 @@ export default function Landing() {
           position: 'absolute', inset: 0,
           background: 'linear-gradient(to bottom, rgba(17,17,16,0.2) 0%, rgba(17,17,16,0.6) 60%, #111110 100%)'
         }} />
-        <div style={{ position: 'relative', zIndex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 48 }}>
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 1200, margin: '0 auto', padding: '0 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 48, width: '100%' }}>
           <div style={{ flex: '1 1 auto', minWidth: 0, maxWidth: 560 }}>
             <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1.75rem' }}>
               AWS Cost Intelligence
@@ -312,7 +312,7 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="stats-card" style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 420, flex: '0 0 420px', marginRight: 40 }}>
+          <div className="stats-card" style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 380, flex: '0 0 380px', marginRight: 0 }}>
             <HeroRightColumn />
           </div>
         </div>
