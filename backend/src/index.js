@@ -15,11 +15,22 @@ import { startCronJobs } from './services/cronJobs.js'
 const app = express()
 const PORT = process.env.PORT || 3001
 
+const ALLOWED_ORIGINS = [
+  'https://vaultixai.app',
+  'https://www.vaultixai.app',
+  'http://localhost:5173',
+]
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? 'https://vaultixai.app'
-    : 'http://localhost:5173',
-  credentials: true
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, Postman, server-to-server)
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error(`CORS: origin ${origin} not allowed`))
+    }
+  },
+  credentials: true,
 }))
 
 // Skip express.json() for the Stripe webhook — it needs the raw body for signature verification
