@@ -59,15 +59,15 @@ function HeroRightColumn() {
   const stat = STATS[currentIndex]
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 420, flexShrink: 0 }}>
+    <>
 
       {/* Card 1 — rotating stat */}
-      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '28px 32px', width: '100%', boxSizing: 'border-box' }}>
+      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '36px 32px', width: '100%', boxSizing: 'border-box' }}>
         <div style={{ opacity: visible ? 1 : 0, transition: 'opacity 400ms ease' }}>
           <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', color: '#3B82F6', textTransform: 'uppercase', margin: '0 0 10px' }}>
             AWS BY THE NUMBERS
           </p>
-          <p style={{ fontSize: 72, fontWeight: 800, color: '#F5F4F0', lineHeight: 1, margin: '0 0 8px' }}>
+          <p style={{ fontSize: 80, fontWeight: 800, color: '#F5F4F0', lineHeight: 1, margin: '0 0 8px' }}>
             {stat.stat}
           </p>
           <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.5, margin: 0 }}>
@@ -122,7 +122,7 @@ function HeroRightColumn() {
         </div>
       </div>
 
-    </div>
+    </>
   )
 }
 
@@ -262,7 +262,7 @@ export default function Landing() {
 
       {/* HERO */}
       <section className="hero-section" style={{
-        position: 'relative', minHeight: '92vh', display: 'flex',
+        position: 'relative', minHeight: '100vh', display: 'flex',
         alignItems: 'center', padding: '8rem 2.5rem 5rem', overflow: 'hidden'
       }}>
         <div style={{
@@ -312,7 +312,7 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="stats-card">
+          <div className="stats-card" style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 420, flex: '0 0 420px', marginRight: 40 }}>
             <HeroRightColumn />
           </div>
         </div>
