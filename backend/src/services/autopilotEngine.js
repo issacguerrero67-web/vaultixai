@@ -11,6 +11,7 @@ import {
   StartInstancesCommand,
   DescribeSnapshotsCommand,
   DeleteSnapshotCommand,
+  CreateVolumeCommand,
 } from '@aws-sdk/client-ec2'
 import { createClient } from '@supabase/supabase-js'
 
@@ -181,6 +182,12 @@ export async function executeAction(actionId, userId) {
     let result = {}
 
     if (action.action_type === 'delete_ebs_volume') {
+      const volInfo = await ec2.send(new DescribeVolumesCommand({
+        VolumeIds: [action.resource_id],
+      }))
+      const availabilityZone = volInfo.Volumes?.[0]?.AvailabilityZone || 'us-east-1a'
+      result.availability_zone = availabilityZone
+
       const snapshot = await ec2.send(new CreateSnapshotCommand({
         VolumeId: action.resource_id,
         Description: `Vaultix Autopilot backup before deletion - ${new Date().toISOString()}`,
@@ -262,6 +269,24 @@ export async function rollbackAction(actionId, userId) {
   const ec2 = new EC2Client({ region: 'us-east-1', credentials })
 
   let result = {}
+
+  if (action.action_type === 'delete_ebs_volume') {
+    if (!action.snapshot_id) throw new Error('No snapshot available for rollback.')
+    const availabilityZone = action.result?.availability_zone || 'us-east-1a'
+    const restored = await ec2.send(new CreateVolumeCommand({
+      SnapshotId: action.snapshot_id,
+      AvailabilityZone: availabilityZone,
+      TagSpecifications: [{
+        ResourceType: 'volume',
+        Tags: [
+          { Key: 'CreatedBy', Value: 'VaultixAutopilotRollback' },
+          { Key: 'RestoredFromSnapshot', Value: action.snapshot_id },
+          { Key: 'OriginalVolume', Value: action.resource_id },
+        ],
+      }],
+    }))
+    result.restored_volume_id = restored.VolumeId
+  }
 
   if (action.action_type === 'stop_ec2_instance') {
     await ec2.send(new StartInstancesCommand({ InstanceIds: [action.resource_id] }))
