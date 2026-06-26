@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import AccountSwitcher from '../components/AccountSwitcher'
 
 const geistFontLink = document.createElement('link')
 geistFontLink.rel = 'stylesheet'
@@ -55,6 +56,8 @@ export default function Reports() {
   const [displayName, setDisplayName] = useState('')
   const [signingOut, setSigningOut] = useState(false)
   const [report, setReport] = useState(null)
+  const [accounts, setAccounts] = useState([])
+  const [activeAccountId, setActiveAccountId] = useState(() => localStorage.getItem('vaultix_active_account') || null)
   const [accountName, setAccountName] = useState('')
   const [searchParams] = useSearchParams()
   const paymentSuccess = searchParams.get('payment') === 'success'
@@ -78,29 +81,54 @@ export default function Reports() {
 
       setUserEmail(session.user.email)
 
-      // Fetch most recent report, account, and profile in parallel
-      const [{ data: reports }, { data: accounts }, { data: profile }] = await Promise.all([
-        supabase
-          .from('audit_reports')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .order('created_at', { ascending: false })
-          .limit(1),
-        supabase
-          .from('aws_accounts')
-          .select('account_name')
-          .eq('user_id', session.user.id)
-          .limit(1),
+      const [{ data: allAccounts }, { data: profile }] = await Promise.all([
+        supabase.from('aws_accounts').select('id, account_name').eq('user_id', session.user.id),
         supabase.from('profiles').select('full_name').eq('id', session.user.id).single(),
       ])
 
-      if (reports?.length) setReport(reports[0])
-      if (accounts?.length) setAccountName(accounts[0].account_name || 'My AWS Account')
+      setAccounts(allAccounts ?? [])
+
+      const storedId = localStorage.getItem('vaultix_active_account')
+      const activeId = storedId && (allAccounts ?? []).find(a => a.id === storedId)
+        ? storedId
+        : allAccounts?.[0]?.id ?? null
+      setActiveAccountId(activeId)
+
+      if (activeId) {
+        const activeAcc = (allAccounts ?? []).find(a => a.id === activeId)
+        setAccountName(activeAcc?.account_name || 'My AWS Account')
+
+        const { data: reports } = await supabase
+          .from('audit_reports')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('aws_account_id', activeId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+        if (reports?.length) setReport(reports[0])
+      }
+
       if (profile?.full_name) setDisplayName(profile.full_name)
       setLoading(false)
     }
     init()
   }, [navigate])
+
+  async function handleAccountSwitch(accountId) {
+    setActiveAccountId(accountId)
+    localStorage.setItem('vaultix_active_account', accountId)
+    setReport(null)
+    const activeAcc = accounts.find(a => a.id === accountId)
+    setAccountName(activeAcc?.account_name || 'My AWS Account')
+    const { data: reports } = await supabase
+      .from('audit_reports')
+      .select('*')
+      .eq('user_id', (await supabase.auth.getSession()).data.session?.user.id)
+      .eq('aws_account_id', accountId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+    if (reports?.length) setReport(reports[0])
+  }
 
   async function handleContactSubmit() {
     if (!contactForm.name || !contactForm.email) return
@@ -277,9 +305,15 @@ export default function Reports() {
           padding: '20px 32px', borderBottom: '1px solid #1E1E1C',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
-          <h1 style={{ fontSize: 18, fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
-            Reports
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
+            <h1 style={{ fontSize: 18, fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em', flexShrink: 0 }}>
+              Reports
+            </h1>
+            <AccountSwitcher
+              activeAccountId={activeAccountId}
+              onAccountChange={handleAccountSwitch}
+            />
+          </div>
           <button
             onClick={runNewAudit}
             disabled={runningAudit}

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import AccountSwitcher from '../components/AccountSwitcher'
 
 const geistFontLink = document.createElement('link')
 geistFontLink.rel = 'stylesheet'
@@ -37,6 +38,8 @@ export default function Autopilot() {
   const [loading, setLoading] = useState(false)
 
   // Account / report context
+  const [accounts, setAccounts] = useState([])
+  const [activeAccountId, setActiveAccountId] = useState(() => localStorage.getItem('vaultix_active_account') || null)
   const [awsAccount, setAwsAccount] = useState(null)
   const [latestReport, setLatestReport] = useState(null)
   const [userPlan, setUserPlan] = useState(null)
@@ -68,13 +71,20 @@ export default function Autopilot() {
       if (profile?.full_name) setDisplayName(profile.full_name)
       setUserPlan(profile?.plan)
 
-      const { data: accounts } = await supabase
+      const { data: allAccounts } = await supabase
         .from('aws_accounts')
         .select('*')
         .eq('user_id', session.user.id)
-        .limit(1)
 
-      const account = accounts?.[0] ?? null
+      setAccounts(allAccounts ?? [])
+
+      const storedId = localStorage.getItem('vaultix_active_account')
+      const activeId = storedId && (allAccounts ?? []).find(a => a.id === storedId)
+        ? storedId
+        : allAccounts?.[0]?.id ?? null
+      setActiveAccountId(activeId)
+
+      const account = (allAccounts ?? []).find(a => a.id === activeId) ?? allAccounts?.[0] ?? null
       setAwsAccount(account)
       setHasAutopilotRole(!!account?.autopilot_role_arn)
 
@@ -131,6 +141,27 @@ export default function Autopilot() {
       localStorage.setItem('vaultix_chat_history', JSON.stringify(messages))
     }
   }, [messages])
+
+  async function handleAccountSwitch(accountId) {
+    setActiveAccountId(accountId)
+    localStorage.setItem('vaultix_active_account', accountId)
+    const account = accounts.find(a => a.id === accountId) ?? null
+    setAwsAccount(account)
+    setHasAutopilotRole(!!account?.autopilot_role_arn)
+    setLatestReport(null)
+    if (account) {
+      const { data: r } = await supabase
+        .from('audit_reports')
+        .select('findings, total_savings, created_at')
+        .eq('aws_account_id', account.id)
+        .eq('user_id', (await supabase.auth.getSession()).data.session?.user.id)
+        .eq('status', 'complete')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      setLatestReport(r ?? null)
+    }
+  }
 
   function clearChat() {
     localStorage.removeItem('vaultix_chat_history')
@@ -275,11 +306,14 @@ export default function Autopilot() {
       <main style={{ marginLeft: isMobile ? 0 : 240, flex: 1, padding: isMobile ? '16px 16px 80px' : '28px 32px', minWidth: 0, overflowX: 'hidden', display: 'flex', flexDirection: 'column', height: '100vh', boxSizing: 'border-box' }}>
 
         {/* Status bar */}
-        {awsAccount && (
+        {(awsAccount || accounts.length > 0) && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, paddingBottom: 16, marginBottom: 16, borderBottom: '1px solid #2a2a28', fontSize: 13, color: '#6b7280', flexWrap: 'wrap', flexShrink: 0 }}>
             <span style={{ color: '#F5F4F0', fontWeight: 600 }}>✦ Autopilot</span>
             <span style={{ color: '#2a2a28' }}>|</span>
-            <span>{awsAccount.account_name}</span>
+            <AccountSwitcher
+              activeAccountId={activeAccountId}
+              onAccountChange={handleAccountSwitch}
+            />
             {latestReport && (
               <>
                 <span style={{ color: '#2a2a28' }}>|</span>

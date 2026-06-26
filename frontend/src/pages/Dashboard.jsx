@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import AccountSwitcher from '../components/AccountSwitcher'
 
 const geistFontLink = document.createElement('link')
 geistFontLink.rel = 'stylesheet'
@@ -55,6 +56,8 @@ export default function Dashboard() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [auditError, setAuditError] = useState('')
   const [awsConnected, setAwsConnected] = useState(null)
+  const [accounts, setAccounts] = useState([])
+  const [activeAccountId, setActiveAccountId] = useState(() => localStorage.getItem('vaultix_active_account') || null)
   const [reportCount, setReportCount] = useState(0)
   const [latestReport, setLatestReport] = useState(null)
   const [hoveredRow, setHoveredRow] = useState(null)
@@ -75,23 +78,36 @@ export default function Dashboard() {
       if (!session) { navigate('/login'); return }
       setUserEmail(session.user.email)
 
-      const [accountsRes, reportsCountRes, latestReportRes, profileRes] = await Promise.all([
-        supabase.from('aws_accounts').select('id').eq('user_id', session.user.id).limit(1),
+      const [accountsRes, reportsCountRes, profileRes] = await Promise.all([
+        supabase.from('aws_accounts').select('id, account_name').eq('user_id', session.user.id),
         supabase.from('audit_reports').select('id', { count: 'exact', head: true }).eq('user_id', session.user.id),
-        supabase
-          .from('audit_reports')
-          .select('id, findings, total_savings, created_at, status')
-          .eq('user_id', session.user.id)
-          .eq('status', 'complete')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
         supabase.from('profiles').select('full_name').eq('id', session.user.id).single(),
       ])
 
-      setAwsConnected(!!(accountsRes.data && accountsRes.data.length > 0))
+      const allAccounts = accountsRes.data ?? []
+      setAccounts(allAccounts)
+      setAwsConnected(allAccounts.length > 0)
+
+      const storedId = localStorage.getItem('vaultix_active_account')
+      const activeId = storedId && allAccounts.find(a => a.id === storedId)
+        ? storedId
+        : allAccounts[0]?.id ?? null
+      setActiveAccountId(activeId)
+
+      if (activeId) {
+        const { data: latestReportRes } = await supabase
+          .from('audit_reports')
+          .select('id, findings, total_savings, created_at, status')
+          .eq('user_id', session.user.id)
+          .eq('aws_account_id', activeId)
+          .eq('status', 'complete')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        setLatestReport(latestReportRes ?? null)
+      }
+
       setReportCount(reportsCountRes.count ?? 0)
-      setLatestReport(latestReportRes.data ?? null)
       if (profileRes.data?.full_name) setDisplayName(profileRes.data.full_name)
       setLoading(false)
     }
@@ -101,6 +117,22 @@ export default function Dashboard() {
   function dismissWelcome() {
     localStorage.setItem('vaultix_welcome_dismissed', 'true')
     setShowWelcome(false)
+  }
+
+  async function handleAccountSwitch(accountId) {
+    setActiveAccountId(accountId)
+    localStorage.setItem('vaultix_active_account', accountId)
+    setLatestReport(null)
+    const { data } = await supabase
+      .from('audit_reports')
+      .select('id, findings, total_savings, created_at, status')
+      .eq('user_id', (await supabase.auth.getSession()).data.session?.user.id)
+      .eq('aws_account_id', accountId)
+      .eq('status', 'complete')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    setLatestReport(data ?? null)
   }
 
   async function handleSignOut() {
@@ -290,9 +322,15 @@ export default function Dashboard() {
           alignItems: runningAudit ? 'flex-start' : 'center',
           justifyContent: 'space-between',
         }}>
-          <h1 style={{ fontSize: isMobile ? 18 : 24, fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
-            Dashboard
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
+            <h1 style={{ fontSize: isMobile ? 18 : 24, fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em', flexShrink: 0 }}>
+              Dashboard
+            </h1>
+            <AccountSwitcher
+              activeAccountId={activeAccountId}
+              onAccountChange={handleAccountSwitch}
+            />
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Link
               to="/dashboard/reports"
