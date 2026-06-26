@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 const MOBILE_CSS = `
@@ -26,8 +26,80 @@ const MOBILE_CSS = `
     .footer-links { justify-content: center !important; }
 
     .section-pad { padding: 3.5rem 1.5rem !important; }
+
+    .stats-card { display: none !important; }
   }
 `
+
+const STATS = [
+  { stat: '$2.3M', label: 'Wasted on forgotten EBS volumes every day across AWS' },
+  { stat: '47%',   label: 'Of AWS bills contain at least one unused resource' },
+  { stat: '5 min', label: 'Average time to connect your AWS account to Vaultix AI' },
+  { stat: '$0',    label: 'Upfront cost — you only pay when we find real savings' },
+  { stat: '20%',   label: 'Of verified savings — only after we save you money' },
+  { stat: '3x',    label: 'Average ROI in the first 30 days for Standard plan customers' },
+]
+
+function StatsCard() {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [visible, setVisible] = useState(true)
+  const intervalRef = useRef(null)
+
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      setVisible(false)
+      setTimeout(() => {
+        setCurrentIndex(i => (i + 1) % STATS.length)
+        setVisible(true)
+      }, 200)
+    }, 3000)
+    return () => clearInterval(intervalRef.current)
+  }, [])
+
+  const stat = STATS[currentIndex]
+
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.03)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 16,
+      padding: '40px 36px',
+      width: '100%',
+      maxWidth: 380,
+      minHeight: 220,
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      position: 'relative',
+      overflow: 'hidden',
+      flexShrink: 0,
+      boxSizing: 'border-box',
+    }}>
+      <div style={{ opacity: visible ? 1 : 0, transition: 'opacity 400ms ease' }}>
+        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', color: '#3B82F6', textTransform: 'uppercase', marginBottom: 12, margin: '0 0 12px' }}>
+          AWS BY THE NUMBERS
+        </p>
+        <p style={{ fontSize: 64, fontWeight: 800, color: '#F5F4F0', lineHeight: 1, margin: '0 0 12px' }}>
+          {stat.stat}
+        </p>
+        <p style={{ fontSize: 15, color: '#6b7280', lineHeight: 1.5, maxWidth: 260, margin: 0 }}>
+          {stat.label}
+        </p>
+      </div>
+      <div style={{ display: 'flex', gap: 6, marginTop: 28 }}>
+        {STATS.map((_, i) => (
+          <div key={i} style={{
+            width: i === currentIndex ? 20 : 4,
+            height: 4,
+            borderRadius: 2,
+            background: i === currentIndex ? '#3B82F6' : '#2a2a28',
+            transition: 'width 300ms ease, background 300ms ease',
+          }} />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function Landing() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
@@ -178,40 +250,46 @@ export default function Landing() {
           position: 'absolute', inset: 0,
           background: 'linear-gradient(to bottom, rgba(17,17,16,0.2) 0%, rgba(17,17,16,0.6) 60%, #111110 100%)'
         }} />
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 700, width: '100%' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1.75rem' }}>
-            AWS Cost Intelligence
-          </p>
-          <h1 className="hero-h1" style={{ fontSize: 'clamp(2.5rem, 5vw, 3.75rem)', fontWeight: 700, lineHeight: 1.08, letterSpacing: '-0.03em', marginBottom: '1.75rem', color: '#F5F4F0' }}>
-            AWS is charging you for things<br />
-            you <span style={{ color: '#3B82F6' }}>forgot exist.</span>
-          </h1>
-          <p style={{ fontSize: '1.05rem', color: 'rgba(245,244,240,0.5)', lineHeight: 1.75, maxWidth: 460, marginBottom: '2.25rem' }}>
-            Connect your AWS account in 5 minutes. We find the waste. You only pay when you save.
-          </p>
-          <div className="hero-buttons" style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
-            <Link to="/signup" className="hero-btn" style={{
-              background: '#F5F4F0', color: '#111110', padding: '11px 24px',
-              borderRadius: 7, fontSize: 14, fontWeight: 600, textDecoration: 'none',
-              transition: 'all 150ms', display: 'inline-block'
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#E5E4E0'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#F5F4F0'; e.currentTarget.style.transform = 'translateY(0)' }}>
-              Get Started
-            </Link>
-            <a href="#process" className="hero-btn" style={{
-              background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)',
-              padding: '11px 24px', borderRadius: 7, fontSize: 14,
-              border: '1px solid rgba(255,255,255,0.1)', textDecoration: 'none', transition: 'all 150ms'
-            }}
-              onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.1)'; e.target.style.color = '#fff' }}
-              onMouseLeave={e => { e.target.style.background = 'rgba(255,255,255,0.06)'; e.target.style.color = 'rgba(255,255,255,0.7)' }}>
-              See how it works
-            </a>
+        <div style={{ position: 'relative', zIndex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 48 }}>
+          <div style={{ flex: '1 1 auto', minWidth: 0, maxWidth: 560 }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1.75rem' }}>
+              AWS Cost Intelligence
+            </p>
+            <h1 className="hero-h1" style={{ fontSize: 'clamp(2.5rem, 5vw, 3.75rem)', fontWeight: 700, lineHeight: 1.08, letterSpacing: '-0.03em', marginBottom: '1.75rem', color: '#F5F4F0' }}>
+              AWS is charging you for things<br />
+              you <span style={{ color: '#3B82F6' }}>forgot exist.</span>
+            </h1>
+            <p style={{ fontSize: '1.05rem', color: 'rgba(245,244,240,0.5)', lineHeight: 1.75, maxWidth: 460, marginBottom: '2.25rem' }}>
+              Connect your AWS account in 5 minutes. We find the waste. You only pay when you save.
+            </p>
+            <div className="hero-buttons" style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+              <Link to="/signup" className="hero-btn" style={{
+                background: '#F5F4F0', color: '#111110', padding: '11px 24px',
+                borderRadius: 7, fontSize: 14, fontWeight: 600, textDecoration: 'none',
+                transition: 'all 150ms', display: 'inline-block'
+              }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#E5E4E0'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#F5F4F0'; e.currentTarget.style.transform = 'translateY(0)' }}>
+                Get Started
+              </Link>
+              <a href="#process" className="hero-btn" style={{
+                background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)',
+                padding: '11px 24px', borderRadius: 7, fontSize: 14,
+                border: '1px solid rgba(255,255,255,0.1)', textDecoration: 'none', transition: 'all 150ms'
+              }}
+                onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.1)'; e.target.style.color = '#fff' }}
+                onMouseLeave={e => { e.target.style.background = 'rgba(255,255,255,0.06)'; e.target.style.color = 'rgba(255,255,255,0.7)' }}>
+                See how it works
+              </a>
+            </div>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>
+              No upfront cost · Read-only AWS access · You only pay when we save you money
+            </p>
           </div>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>
-            No upfront cost · Read-only AWS access · You only pay when we save you money
-          </p>
+
+          <div className="stats-card">
+            <StatsCard />
+          </div>
         </div>
       </section>
 
