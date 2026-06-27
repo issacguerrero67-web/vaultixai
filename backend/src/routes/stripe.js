@@ -73,25 +73,9 @@ router.post('/create-checkout', async (req, res, next) => {
       return res.status(400).json({ error: 'A valid tier (standard or team) is required.' })
     }
 
-    // Fetch savings server-side — never trust client-supplied amount
-    const { data: report, error: reportError } = await supabase
-      .from('audit_reports')
-      .select('total_savings')
-      .eq('user_id', req.user.id)
-      .eq('status', 'complete')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
-
-    if (reportError || !report) {
-      return res.status(400).json({ error: 'No completed audit found. Run an audit first.' })
-    }
-
-    const savingsAmount = report.total_savings
     const rate = TIER_RATES[tier]
-    const feeUsd = savingsAmount * rate
-    const feeCents = Math.round(feeUsd * 100)
     const percentage = rate * 100
+    const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1)
 
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
@@ -101,10 +85,10 @@ router.post('/create-checkout', async (req, res, next) => {
           price_data: {
             currency: 'usd',
             recurring: { interval: 'month' },
-            unit_amount: feeCents,
+            unit_amount: 0,
             product_data: {
-              name: `Vaultix AI - ${tier.charAt(0).toUpperCase() + tier.slice(1)} Plan`,
-              description: `AWS cost optimization - ${percentage}% of $${savingsAmount}/mo verified savings`,
+              name: `Vaultix AI - ${tierLabel} Plan`,
+              description: `Cloud cost optimization — ${percentage}% of verified monthly savings`,
             },
           },
         },
@@ -115,7 +99,6 @@ router.post('/create-checkout', async (req, res, next) => {
       metadata: {
         userId: req.user.id,
         tier,
-        savingsAmount: String(savingsAmount),
       },
     })
 
