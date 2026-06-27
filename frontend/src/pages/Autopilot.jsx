@@ -27,6 +27,7 @@ export default function Autopilot() {
   const location = useLocation()
   const messagesEndRef = useRef(null)
 
+  const [userId, setUserId] = useState(null)
   const [userEmail, setUserEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [signingOut, setSigningOut] = useState(false)
@@ -62,6 +63,7 @@ export default function Autopilot() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { navigate('/login'); return }
 
+      setUserId(session.user.id)
       setUserEmail(session.user.email)
 
       const { data: profile } = await supabase
@@ -109,7 +111,7 @@ export default function Autopilot() {
       const savings = report?.total_savings ?? 0
 
       // Load saved chat history — skip welcome message if history exists
-      const savedMessages = localStorage.getItem('vaultix_chat_history')
+      const savedMessages = localStorage.getItem(`autopilot-chat-${session.user.id}`)
       if (savedMessages) {
         try {
           const parsed = JSON.parse(savedMessages)
@@ -139,10 +141,10 @@ export default function Autopilot() {
 
   // Persist chat history to localStorage on every change
   useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem('vaultix_chat_history', JSON.stringify(messages))
+    if (messages.length > 0 && userId) {
+      localStorage.setItem(`autopilot-chat-${userId}`, JSON.stringify(messages))
     }
-  }, [messages])
+  }, [messages, userId])
 
   async function handleAccountSwitch(accountId) {
     setActiveAccountId(accountId)
@@ -166,7 +168,7 @@ export default function Autopilot() {
   }
 
   function clearChat() {
-    localStorage.removeItem('vaultix_chat_history')
+    if (userId) localStorage.removeItem(`autopilot-chat-${userId}`)
     setMessages([{
       role: 'assistant',
       content: `Hi ${displayName || 'there'}! I'm your Vaultix AI Assistant. How can I help you with your cloud costs today?`,
