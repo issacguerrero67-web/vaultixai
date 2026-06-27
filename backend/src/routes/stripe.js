@@ -2,6 +2,7 @@ import express, { Router } from 'express'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { requireAuth } from '../middleware/auth.js'
+import { sendWelcomeEmail, sendPaymentConfirmationEmail, sendCancellationEmail } from '../services/emailService.js'
 
 const router = Router()
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
@@ -14,6 +15,10 @@ const supabase = createClient(
 const TIER_RATES = { standard: 0.20, team: 0.15 }
 
 // POST /api/stripe/webhook — raw body, no auth
+// NOTE: Stripe dashboard webhook must have these events enabled:
+//   checkout.session.completed
+//   customer.subscription.deleted
+//   customer.subscription.updated
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature']
 
@@ -68,8 +73,105 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         .insert({ event_id: event.id, processed_at: new Date().toISOString() })
 
       console.log('[Stripe] Subscription activated for user:', userId)
+
+      // Send welcome + payment confirmation emails
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', userId)
+          .single()
+
+        const userEmail = session.customer_email || session.customer_details?.email
+        const fullName = profile?.full_name || null
+        const savingsRate = tier === 'team' ? 15 : 20
+
+        await sendWelcomeEmail(userEmail, fullName, tier)
+        await sendPaymentConfirmationEmail(userEmail, fullName, tier, savingsRate)
+      } catch (emailErr) {
+        console.error('[Stripe] Failed to send post-checkout emails:', emailErr.message)
+      }
     } catch (err) {
       console.error('[Stripe] Failed to update profile after payment:', err.message)
+    }
+  }
+
+  if (event.type === 'customer.subscription.deleted') {
+    const subscription = event.data.object
+    const customerId = subscription.customer
+
+    console.log('[Stripe] customer.subscription.deleted for customer:', customerId)
+
+    try {
+      const { data: profile, error: lookupError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .eq('stripe_customer_id', customerId)
+        .single()
+
+      if (lookupError || !profile) {
+        console.error('[Stripe] Could not find profile for customer:', customerId, lookupError?.message)
+      } else {
+        await supabase
+          .from('profiles')
+          .update({ plan: 'free', subscription_status: 'cancelled' })
+          .eq('id', profile.id)
+
+        console.log('[Stripe] Subscription cancelled — downgraded user:', profile.id)
+
+        try {
+          const customer = await stripe.customers.retrieve(customerId)
+          const userEmail = customer.email
+          await sendCancellationEmail(userEmail, profile.full_name)
+        } catch (emailErr) {
+          console.error('[Stripe] Failed to send cancellation email:', emailErr.message)
+        }
+      }
+    } catch (err) {
+      console.error('[Stripe] Failed to handle subscription.deleted:', err.message)
+    }
+  }
+
+  if (event.type === 'customer.subscription.updated') {
+    const subscription = event.data.object
+    const customerId = subscription.customer
+    const status = subscription.status
+
+    console.log('[Stripe] customer.subscription.updated — customer:', customerId, 'status:', status)
+
+    try {
+      const { data: profile, error: lookupError } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .eq('stripe_customer_id', customerId)
+        .single()
+
+      if (lookupError || !profile) {
+        console.error('[Stripe] Could not find profile for customer:', customerId, lookupError?.message)
+      } else if (status === 'canceled' || status === 'unpaid') {
+        await supabase
+          .from('profiles')
+          .update({ plan: 'free', subscription_status: 'cancelled' })
+          .eq('id', profile.id)
+
+        console.log('[Stripe] Subscription updated to cancelled/unpaid — downgraded user:', profile.id)
+
+        try {
+          const customer = await stripe.customers.retrieve(customerId)
+          await sendCancellationEmail(customer.email, profile.full_name)
+        } catch (emailErr) {
+          console.error('[Stripe] Failed to send cancellation email:', emailErr.message)
+        }
+      } else if (status === 'active') {
+        await supabase
+          .from('profiles')
+          .update({ subscription_status: 'active' })
+          .eq('id', profile.id)
+
+        console.log('[Stripe] Subscription reactivated for user:', profile.id)
+      }
+    } catch (err) {
+      console.error('[Stripe] Failed to handle subscription.updated:', err.message)
     }
   }
 
