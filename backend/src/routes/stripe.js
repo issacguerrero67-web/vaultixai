@@ -27,7 +27,12 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object
+
+    console.log('[Stripe] checkout.session.completed metadata:', session.metadata)
+
     const { userId, tier } = session.metadata
+
+    console.log('[Stripe] Processing checkout for userId:', userId, 'tier:', tier)
 
     try {
       // Idempotency check — skip if this event was already processed
@@ -42,11 +47,20 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         return res.json({ received: true })
       }
 
-      await supabase.from('profiles').upsert({
-        id: userId,
-        stripe_customer_id: session.customer,
-        plan: tier,
-      })
+      const { data: updateData, error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          plan: tier,
+          stripe_customer_id: session.customer,
+          subscription_status: 'active',
+        })
+        .eq('id', userId)
+
+      console.log('[Stripe] Profile update result — data:', updateData, 'error:', updateError)
+
+      if (updateError) {
+        console.error('[Stripe] Profile update failed:', updateError.message)
+      }
 
       // Mark event as processed
       await supabase
