@@ -33,11 +33,7 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object
 
-    console.log('[Stripe] checkout.session.completed metadata:', session.metadata)
-
     const { userId, tier } = session.metadata
-
-    console.log('[Stripe] Processing checkout for userId:', userId, 'tier:', tier)
 
     try {
       // Idempotency check — skip if this event was already processed
@@ -48,11 +44,10 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         .single()
 
       if (existingEvent) {
-        console.log('[Stripe] Duplicate event ignored:', event.id)
         return res.json({ received: true })
       }
 
-      const { data: updateData, error: updateError } = await supabase
+      const { error: updateError } = await supabase
         .from('profiles')
         .update({
           plan: tier,
@@ -60,8 +55,6 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
           subscription_status: 'active',
         })
         .eq('id', userId)
-
-      console.log('[Stripe] Profile update result — data:', updateData, 'error:', updateError)
 
       if (updateError) {
         console.error('[Stripe] Profile update failed:', updateError.message)

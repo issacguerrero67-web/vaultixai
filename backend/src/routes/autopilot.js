@@ -76,6 +76,19 @@ router.post('/approve', async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid aws_account_id.' })
     }
 
+    const { data: existingAction, error: fetchError } = await supabase
+      .from('autopilot_actions')
+      .select('id, user_id')
+      .eq('id', action_id)
+      .single()
+
+    if (fetchError || !existingAction) {
+      return res.status(404).json({ error: 'Action not found.' })
+    }
+    if (existingAction.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Unauthorized.' })
+    }
+
     await supabase.from('autopilot_actions')
       .update({ status: 'approved' })
       .eq('id', action_id)
@@ -100,6 +113,19 @@ router.post('/skip', async (req, res, next) => {
 
     if (!action_id || !UUID_REGEX.test(action_id)) {
       return res.status(400).json({ error: 'Invalid action_id.' })
+    }
+
+    const { data: existingAction, error: fetchError } = await supabase
+      .from('autopilot_actions')
+      .select('id, user_id')
+      .eq('id', action_id)
+      .single()
+
+    if (fetchError || !existingAction) {
+      return res.status(404).json({ error: 'Action not found.' })
+    }
+    if (existingAction.user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Unauthorized.' })
     }
 
     await supabase.from('autopilot_actions')
