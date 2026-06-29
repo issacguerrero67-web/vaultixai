@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import AccountSwitcher from '../components/AccountSwitcher'
+import FeatureGate from '../components/FeatureGate'
+import { useUserPlan } from '../hooks/useUserPlan'
 
 const geistFontLink = document.createElement('link')
 geistFontLink.rel = 'stylesheet'
@@ -10,11 +13,12 @@ if (!document.head.querySelector('[href*="Geist"]')) {
 }
 
 const NAV_ITEMS = [
-  { label: 'Dashboard',   icon: '⊡', path: '/dashboard' },
-  { label: 'Reports',     icon: '≡', path: '/dashboard/reports' },
-  { label: 'Billing',     icon: '◈', path: '/dashboard/billing' },
-  { label: 'AWS Accounts', icon: '⊕', path: '/dashboard/accounts' },
-  { label: 'Settings',    icon: '⊙', path: '/dashboard/settings' },
+  { label: 'Dashboard',    icon: '⊡', path: '/dashboard' },
+  { label: 'Reports',      icon: '≡', path: '/dashboard/reports' },
+  { label: 'Billing',      icon: '◇', path: '/dashboard/billing' },
+  { label: 'Cloud Accounts', icon: '⊕', path: '/dashboard/accounts' },
+  { label: 'Autopilot',    icon: '✦', path: '/dashboard/autopilot' },
+  { label: 'Settings',     icon: '⊙', path: '/dashboard/settings' },
 ]
 
 const CATEGORY_ICONS = {
@@ -54,12 +58,20 @@ export default function Reports() {
   const [displayName, setDisplayName] = useState('')
   const [signingOut, setSigningOut] = useState(false)
   const [report, setReport] = useState(null)
+  const [accounts, setAccounts] = useState([])
+  const [activeAccountId, setActiveAccountId] = useState(() => localStorage.getItem('vaultix_active_account') || null)
   const [accountName, setAccountName] = useState('')
   const [searchParams] = useSearchParams()
   const paymentSuccess = searchParams.get('payment') === 'success'
   const [expandedFindings, setExpandedFindings] = useState({})
   const [allExpanded, setAllExpanded] = useState(false)
+  const [showContact, setShowContact] = useState(false)
+  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' })
+  const [contactSent, setContactSent] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [pastReports, setPastReports] = useState([])
+  const [selectedReportId, setSelectedReportId] = useState(null)
+  const { isPaid } = useUserPlan()
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768)
@@ -74,29 +86,78 @@ export default function Reports() {
 
       setUserEmail(session.user.email)
 
-      // Fetch most recent report, account, and profile in parallel
-      const [{ data: reports }, { data: accounts }, { data: profile }] = await Promise.all([
-        supabase
-          .from('audit_reports')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .order('created_at', { ascending: false })
-          .limit(1),
-        supabase
-          .from('aws_accounts')
-          .select('account_name')
-          .eq('user_id', session.user.id)
-          .limit(1),
+      const [{ data: allAccounts }, { data: profile }] = await Promise.all([
+        supabase.from('aws_accounts').select('id, account_name').eq('user_id', session.user.id),
         supabase.from('profiles').select('full_name').eq('id', session.user.id).single(),
       ])
 
-      if (reports?.length) setReport(reports[0])
-      if (accounts?.length) setAccountName(accounts[0].account_name || 'My AWS Account')
+      setAccounts(allAccounts ?? [])
+
+      const storedId = localStorage.getItem('vaultix_active_account')
+      const activeId = storedId && (allAccounts ?? []).find(a => a.id === storedId)
+        ? storedId
+        : allAccounts?.[0]?.id ?? null
+      setActiveAccountId(activeId)
+
+      if (activeId) {
+        const activeAcc = (allAccounts ?? []).find(a => a.id === activeId)
+        setAccountName(activeAcc?.account_name || 'My Cloud Account')
+
+        const { data: reports } = await supabase
+          .from('audit_reports')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .eq('aws_account_id', activeId)
+          .order('created_at', { ascending: false })
+          .limit(10)
+        if (reports?.length) {
+          setReport(reports[0])
+          setPastReports(reports)
+          setSelectedReportId(reports[0]?.id ?? null)
+        }
+      }
+
       if (profile?.full_name) setDisplayName(profile.full_name)
       setLoading(false)
     }
     init()
   }, [navigate])
+
+  async function handleAccountSwitch(accountId) {
+    setActiveAccountId(accountId)
+    localStorage.setItem('vaultix_active_account', accountId)
+    setReport(null)
+    setPastReports([])
+    setSelectedReportId(null)
+    const activeAcc = accounts.find(a => a.id === accountId)
+    setAccountName(activeAcc?.account_name || 'My AWS Account')
+    const { data: reports } = await supabase
+      .from('audit_reports')
+      .select('*')
+      .eq('user_id', (await supabase.auth.getSession()).data.session?.user.id)
+      .eq('aws_account_id', accountId)
+      .order('created_at', { ascending: false })
+      .limit(10)
+    if (reports?.length) {
+      setReport(reports[0])
+      setPastReports(reports)
+      setSelectedReportId(reports[0]?.id ?? null)
+    }
+  }
+
+  async function handleContactSubmit() {
+    if (!contactForm.name || !contactForm.email) return
+    try {
+      await fetch('https://formspree.io/f/xwvdvzbp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ name: contactForm.name, email: contactForm.email, message: contactForm.message }),
+      })
+      setContactSent(true)
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   async function handleSignOut() {
     setSigningOut(true)
@@ -161,6 +222,42 @@ export default function Reports() {
       overflowX: 'hidden', width: '100%', maxWidth: '100vw',
     }}>
 
+      {/* ── CONTACT MODAL ── */}
+      {showContact && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={e => { if (e.target === e.currentTarget) setShowContact(false) }}>
+          <div style={{ background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 12, padding: 32, width: '100%', maxWidth: 480, position: 'relative', margin: '0 16px' }}>
+            <button onClick={() => setShowContact(false)}
+              style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', color: '#6b7280', fontSize: 20, cursor: 'pointer' }}>×</button>
+            {contactSent ? (
+              <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                <span style={{ fontSize: 32, color: '#22c55e', marginBottom: 12, display: 'block' }}>✓</span>
+                <p style={{ fontSize: 18, fontWeight: 600, color: '#F5F4F0', marginBottom: 8 }}>Message sent!</p>
+                <p style={{ fontSize: 14, color: '#6b7280' }}>We'll be in touch within 24 hours.</p>
+              </div>
+            ) : (
+              <>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#F5F4F0', marginBottom: 8 }}>Talk to an Expert</h2>
+                <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>We'll review your findings and help implement the fixes. You only pay a percentage of what we actually save you.</p>
+                <input type="text" placeholder="Your name" value={contactForm.name}
+                  onChange={e => setContactForm(p => ({ ...p, name: e.target.value }))}
+                  style={{ width: '100%', background: '#111110', border: '1px solid #2a2a28', borderRadius: 6, padding: '10px 14px', color: '#F5F4F0', fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none' }} />
+                <input type="email" placeholder="Work email" value={contactForm.email}
+                  onChange={e => setContactForm(p => ({ ...p, email: e.target.value }))}
+                  style={{ width: '100%', background: '#111110', border: '1px solid #2a2a28', borderRadius: 6, padding: '10px 14px', color: '#F5F4F0', fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none' }} />
+                <textarea rows={4} value={contactForm.message}
+                  onChange={e => setContactForm(p => ({ ...p, message: e.target.value }))}
+                  style={{ width: '100%', background: '#111110', border: '1px solid #2a2a28', borderRadius: 6, padding: '10px 14px', color: '#F5F4F0', fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none', resize: 'vertical' }} />
+                <button onClick={handleContactSubmit}
+                  style={{ width: '100%', background: '#3B82F6', color: 'white', border: 'none', borderRadius: 6, padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginTop: 4 }}>
+                  Send Message →
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── SIDEBAR ── */}
       <aside style={{
         width: 240, flexShrink: 0, backgroundColor: '#0D0D0D',
@@ -222,10 +319,17 @@ export default function Reports() {
         <div style={{
           padding: '20px 32px', borderBottom: '1px solid #1E1E1C',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexWrap: 'wrap', gap: 8,
         }}>
-          <h1 style={{ fontSize: 18, fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
-            Reports
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0, flexShrink: 0 }}>
+            <h1 style={{ fontSize: 18, fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em', flexShrink: 0 }}>
+              Reports
+            </h1>
+            <AccountSwitcher
+              activeAccountId={activeAccountId}
+              onAccountChange={handleAccountSwitch}
+            />
+          </div>
           <button
             onClick={runNewAudit}
             disabled={runningAudit}
@@ -236,6 +340,7 @@ export default function Reports() {
               cursor: runningAudit ? 'not-allowed' : 'pointer',
               opacity: runningAudit ? 0.7 : 1,
               transition: 'transform 150ms, box-shadow 150ms',
+              whiteSpace: 'nowrap', flexShrink: 0,
             }}
             onMouseEnter={e => { if (!runningAudit) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' } }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
@@ -279,7 +384,7 @@ export default function Reports() {
                 No audits run yet
               </h2>
               <p style={{ color: '#666662', fontSize: 14, lineHeight: 1.7, maxWidth: 380, margin: '0 0 28px' }}>
-                Go to your dashboard and click Run Audit to scan your AWS account for cost optimization opportunities.
+                Go to your dashboard and click Run Audit to scan your cloud account for cost optimization opportunities.
               </p>
               <Link
                 to="/dashboard"
@@ -304,7 +409,7 @@ export default function Reports() {
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
                   <div>
                     <h2 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.03em', color: '#F5F4F0', margin: '0 0 6px' }}>
-                      AWS Cost Audit Report
+                      Cloud Cost Audit Report
                     </h2>
                     <p style={{ fontSize: 13, color: '#666662', margin: 0 }}>
                       {accountName}{accountName && auditDate ? ' · ' : ''}{auditDate}
@@ -368,6 +473,46 @@ export default function Reports() {
                 ))}
               </div>
 
+              {/* ── REPORT HISTORY ── */}
+              <FeatureGate
+                isPaid={isPaid}
+                message="Upgrade to view your full report history"
+                style={{ marginTop: 32, borderRadius: 8 }}
+              >
+                <div style={{ marginTop: 32, background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8, overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 20px', borderBottom: '1px solid #2a2a28' }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: '#F5F4F0' }}>Report History</span>
+                  </div>
+                  {pastReports.length <= 1 ? (
+                    <div style={{ padding: '20px', color: '#6b7280', fontSize: 13 }}>No previous reports yet. Run more audits to build history.</div>
+                  ) : (
+                    pastReports.map((r, i) => (
+                      <div
+                        key={r.id}
+                        onClick={() => { setSelectedReportId(r.id); setReport(r) }}
+                        style={{
+                          padding: '12px 20px',
+                          borderTop: i === 0 ? 'none' : '1px solid #1e1e1c',
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          cursor: 'pointer',
+                          background: selectedReportId === r.id ? '#222220' : 'transparent',
+                          transition: 'background 150ms',
+                        }}
+                        onMouseEnter={e => { if (selectedReportId !== r.id) e.currentTarget.style.background = '#1e1e1c' }}
+                        onMouseLeave={e => { if (selectedReportId !== r.id) e.currentTarget.style.background = 'transparent' }}
+                      >
+                        <span style={{ fontSize: 13, color: '#F5F4F0' }}>
+                          {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </span>
+                        <span style={{ fontSize: 13, color: '#3B82F6', fontWeight: 600 }}>
+                          ${(r.total_savings || 0).toLocaleString()}/mo
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </FeatureGate>
+
               {/* ── CONTACT CTA ── */}
               <div style={{
                 marginTop: 48,
@@ -389,21 +534,24 @@ export default function Reports() {
                     Our team can handle the remediation — you only pay a percentage of what we save you.
                   </p>
                 </div>
-                <a
-                  href="mailto:issacguerrero67@gmail.com?subject=Vaultix AI - Implementation Help&body=Hi, I'd like help implementing the cost optimization findings from my Vaultix AI audit."
+                <button
+                  onClick={() => {
+                    setContactSent(false)
+                    setContactForm({
+                      name: displayName || '',
+                      email: userEmail || '',
+                      message: `I have ${sortedFindings.length} findings in my Cloud Cost Audit Report with potential savings of $${totalSavings.toLocaleString()}/mo. I'd like help implementing the fixes.`,
+                    })
+                    setShowContact(true)
+                  }}
                   style={{
-                    background: '#3B82F6',
-                    color: '#fff',
-                    padding: '12px 24px',
-                    borderRadius: 8,
-                    textDecoration: 'none',
-                    fontWeight: 600,
-                    fontSize: 14,
-                    whiteSpace: 'nowrap',
+                    background: '#3B82F6', color: '#fff', border: 'none',
+                    padding: '12px 24px', borderRadius: 8,
+                    fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap', cursor: 'pointer',
                   }}
                 >
                   Talk to an Expert →
-                </a>
+                </button>
               </div>
             </>
           )}
@@ -419,10 +567,10 @@ export default function Reports() {
         }}>
           {[
             { label: 'Dashboard', path: '/dashboard', icon: '⊡' },
-            { label: 'Reports', path: '/dashboard/reports', icon: '≡' },
-            { label: 'Billing', path: '/dashboard/billing', icon: '◇' },
-            { label: 'Accounts', path: '/dashboard/accounts', icon: '⊕' },
-            { label: 'Settings', path: '/dashboard/settings', icon: '⊙' },
+            { label: 'Reports',   path: '/dashboard/reports', icon: '≡' },
+            { label: 'Autopilot', path: '/dashboard/autopilot', icon: '✦' },
+            { label: 'Accounts',  path: '/dashboard/accounts', icon: '⊕' },
+            { label: 'Settings',  path: '/dashboard/settings', icon: '⊙' },
           ].map(({ label, path, icon }) => {
             const isActive = window.location.pathname === path
             return (

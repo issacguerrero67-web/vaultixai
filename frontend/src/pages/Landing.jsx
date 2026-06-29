@@ -1,8 +1,13 @@
 import { Link } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 const MOBILE_CSS = `
+  @keyframes slideProvider {
+    0% { transform: translateX(0px); }
+    100% { transform: translateX(-8px); }
+  }
+
   @media (max-width: 768px) {
     .nav-links { display: none !important; }
 
@@ -26,10 +31,115 @@ const MOBILE_CSS = `
     .footer-links { justify-content: center !important; }
 
     .section-pad { padding: 3.5rem 1.5rem !important; }
+
+    .stats-card { display: none !important; }
   }
 `
 
+const STATS = [
+  { stat: '$2.3M', label: 'Wasted on forgotten cloud resources every day' },
+  { stat: '47%',   label: 'Of cloud bills contain at least one unused resource' },
+  { stat: '5 min', label: 'Average time to connect your cloud account to Vaultix AI' },
+  { stat: '$0',    label: 'Upfront cost — you only pay when we find real savings' },
+  { stat: '20%',   label: 'Of verified savings — only after we save you money' },
+  { stat: '3x',    label: 'Average ROI in the first 30 days for Standard plan customers' },
+]
+
+function HeroRightColumn() {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [visible, setVisible] = useState(true)
+  const intervalRef = useRef(null)
+
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      setVisible(false)
+      setTimeout(() => {
+        setCurrentIndex(i => (i + 1) % STATS.length)
+        setVisible(true)
+      }, 200)
+    }, 3000)
+    return () => clearInterval(intervalRef.current)
+  }, [])
+
+  const stat = STATS[currentIndex]
+
+  return (
+    <>
+
+      {/* Card 1 — rotating stat */}
+      <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '36px 32px', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ opacity: visible ? 1 : 0, transition: 'opacity 400ms ease' }}>
+          <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', color: '#3B82F6', textTransform: 'uppercase', margin: '0 0 10px' }}>
+            AWS BY THE NUMBERS
+          </p>
+          <p style={{ fontSize: 80, fontWeight: 800, color: '#F5F4F0', lineHeight: 1, margin: '0 0 8px' }}>
+            {stat.stat}
+          </p>
+          <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.5, margin: 0 }}>
+            {stat.label}
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: 6, marginTop: 20 }}>
+          {STATS.map((_, i) => (
+            <div key={i} style={{
+              width: i === currentIndex ? 20 : 4,
+              height: 4,
+              borderRadius: 2,
+              background: i === currentIndex ? '#3B82F6' : '#2a2a28',
+              transition: 'width 300ms ease, background 300ms ease',
+            }} />
+          ))}
+        </div>
+      </div>
+
+      {/* Card 2 — how it works mini steps */}
+      <div style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 12, padding: '20px 24px' }}>
+        <p style={{ fontSize: 12, fontWeight: 600, color: '#3B82F6', marginBottom: 14, letterSpacing: '0.05em', margin: '0 0 14px' }}>
+          HOW IT WORKS
+        </p>
+        <div style={{ display: 'flex', gap: 0, alignItems: 'flex-start' }}>
+          {[
+            { num: 1, label: 'Connect cloud in 5 min' },
+            { num: 2, label: 'AI scans for waste' },
+            { num: 3, label: 'Pay only on savings' },
+          ].map((step, i) => (
+            <div key={step.num} style={{ display: 'flex', alignItems: 'flex-start', flex: 1 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, textAlign: 'center' }}>
+                <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#3B82F6', color: 'white', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                  {step.num}
+                </div>
+                <span style={{ fontSize: 12, color: '#9ca3af', lineHeight: 1.4 }}>{step.label}</span>
+              </div>
+              {i < 2 && (
+                <div style={{ flex: 0, width: 24, height: 1, background: '#2a2a28', marginTop: 14, flexShrink: 0 }} />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Card 3 — zero risk callout */}
+      <div style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.15)', borderRadius: 12, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
+        <span style={{ color: '#22c55e', fontWeight: 800, fontSize: 28, flexShrink: 0 }}>✓</span>
+        <div>
+          <p style={{ fontSize: 14, fontWeight: 600, color: '#F5F4F0', margin: '0 0 4px' }}>Zero upfront cost. Zero risk.</p>
+          <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>Read-only access. We can't touch your infrastructure without your approval.</p>
+        </div>
+      </div>
+
+    </>
+  )
+}
+
 export default function Landing() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session)
+    })
+  }, [])
+
   const [waitlistEmail, setWaitlistEmail] = useState('')
   const [waitlistDone, setWaitlistDone] = useState(false)
   const [waitlistError, setWaitlistError] = useState('')
@@ -121,6 +231,17 @@ export default function Landing() {
             onMouseLeave={e => e.target.style.color = '#888884'}>Pricing</a>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
+          {isLoggedIn ? (
+            <a href="/dashboard" style={{
+              background: '#3B82F6', color: 'white', border: 'none', borderRadius: 6,
+              padding: '8px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', textDecoration: 'none',
+            }}
+              onMouseEnter={e => e.currentTarget.style.background = '#2563EB'}
+              onMouseLeave={e => e.currentTarget.style.background = '#3B82F6'}>
+              Go to Dashboard →
+            </a>
+          ) : (
+            <>
           <Link to="/login" style={{
             color: '#F5F4F0', padding: '8px 16px',
             borderRadius: 6, fontSize: 13, fontWeight: 500, textDecoration: 'none',
@@ -139,13 +260,15 @@ export default function Landing() {
             onMouseLeave={e => e.currentTarget.style.background = '#3B82F6'}>
             Get Started
           </Link>
+            </>
+          )}
         </div>
       </nav>
 
       {/* HERO */}
       <section className="hero-section" style={{
-        position: 'relative', minHeight: '92vh', display: 'flex',
-        alignItems: 'center', padding: '8rem 2.5rem 5rem', overflow: 'hidden'
+        position: 'relative', minHeight: '100vh', display: 'flex',
+        alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
       }}>
         <div style={{
           position: 'absolute', inset: 0,
@@ -157,40 +280,74 @@ export default function Landing() {
           position: 'absolute', inset: 0,
           background: 'linear-gradient(to bottom, rgba(17,17,16,0.2) 0%, rgba(17,17,16,0.6) 60%, #111110 100%)'
         }} />
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 700, width: '100%' }}>
-          <p style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '1.75rem' }}>
-            AWS Cost Intelligence
-          </p>
-          <h1 className="hero-h1" style={{ fontSize: 'clamp(2.5rem, 5vw, 3.75rem)', fontWeight: 700, lineHeight: 1.08, letterSpacing: '-0.03em', marginBottom: '1.75rem', color: '#F5F4F0' }}>
-            AWS is charging you for things<br />
-            you <span style={{ color: '#3B82F6' }}>forgot exist.</span>
-          </h1>
-          <p style={{ fontSize: '1.05rem', color: 'rgba(245,244,240,0.5)', lineHeight: 1.75, maxWidth: 460, marginBottom: '2.25rem' }}>
-            Connect your AWS account in 5 minutes. We find the waste. You only pay when you save.
-          </p>
-          <div className="hero-buttons" style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
-            <Link to="/signup" className="hero-btn" style={{
-              background: '#F5F4F0', color: '#111110', padding: '11px 24px',
-              borderRadius: 7, fontSize: 14, fontWeight: 600, textDecoration: 'none',
-              transition: 'all 150ms', display: 'inline-block'
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#E5E4E0'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#F5F4F0'; e.currentTarget.style.transform = 'translateY(0)' }}>
-              Get Started
-            </Link>
-            <a href="#process" className="hero-btn" style={{
-              background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)',
-              padding: '11px 24px', borderRadius: 7, fontSize: 14,
-              border: '1px solid rgba(255,255,255,0.1)', textDecoration: 'none', transition: 'all 150ms'
-            }}
-              onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.1)'; e.target.style.color = '#fff' }}
-              onMouseLeave={e => { e.target.style.background = 'rgba(255,255,255,0.06)'; e.target.style.color = 'rgba(255,255,255,0.7)' }}>
-              See how it works
-            </a>
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 1200, margin: '0 auto', padding: '0 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 48, width: '100%' }}>
+          <div style={{ flex: '1 1 auto', minWidth: 0, maxWidth: 560 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.12em', color: '#6b7280', textTransform: 'uppercase', marginBottom: 16 }}>CLOUD COST INTELLIGENCE</div>
+              <h1 className="hero-h1" style={{ fontSize: 52, fontWeight: 800, color: '#F5F4F0', lineHeight: 1.1, marginBottom: 20 }}>
+                You're overpaying<br />
+                your cloud<br />
+                <span style={{ color: '#3B82F6' }}>providers.</span>
+              </h1>
+            </div>
+            <p style={{ fontSize: '1.05rem', color: 'rgba(245,244,240,0.5)', lineHeight: 1.75, maxWidth: 460, marginBottom: '2.25rem' }}>
+              Connect your cloud account in 5 minutes. We find the waste. You only pay when you save.
+            </p>
+            <div className="hero-buttons" style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+              <Link to="/signup" className="hero-btn" style={{
+                background: '#F5F4F0', color: '#111110', padding: '11px 24px',
+                borderRadius: 7, fontSize: 14, fontWeight: 600, textDecoration: 'none',
+                transition: 'all 150ms', display: 'inline-block'
+              }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#E5E4E0'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#F5F4F0'; e.currentTarget.style.transform = 'translateY(0)' }}>
+                Get Started
+              </Link>
+              <a href="#process" className="hero-btn" style={{
+                background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)',
+                padding: '11px 24px', borderRadius: 7, fontSize: 14,
+                border: '1px solid rgba(255,255,255,0.1)', textDecoration: 'none', transition: 'all 150ms'
+              }}
+                onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.1)'; e.target.style.color = '#fff' }}
+                onMouseLeave={e => { e.target.style.background = 'rgba(255,255,255,0.06)'; e.target.style.color = 'rgba(255,255,255,0.7)' }}>
+                See how it works
+              </a>
+            </div>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>
+              No upfront cost · Read-only access · You only pay when we save you money
+            </p>
+
+            {/* Provider trust bar */}
+            <div style={{ marginTop: 48, paddingTop: 32, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', color: '#6b7280', textTransform: 'uppercase', marginBottom: 20 }}>
+                SUPPORTED PROVIDERS
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 16, animation: 'slideProvider 4s ease-in-out infinite alternate' }}>
+                  {/* AWS */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20 }}>
+                    <div style={{ width: 18, height: 18, borderRadius: 4, background: '#FF9900', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: 7, fontWeight: 800, color: 'white' }}>AWS</span>
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: '#F5F4F0' }}>Amazon Web Services</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: '#22c55e', background: 'rgba(34,197,94,0.1)', padding: '2px 8px', borderRadius: 10 }}>Live</span>
+                  </div>
+                  {/* Azure */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20 }}>
+                    <div style={{ width: 18, height: 18, borderRadius: 4, background: '#0078D4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: 9, fontWeight: 800, color: 'white' }}>Az</span>
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: '#F5F4F0' }}>Microsoft Azure</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: '#f59e0b', background: 'rgba(245,158,11,0.1)', padding: '2px 8px', borderRadius: 10 }}>Coming Soon</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>
-            No upfront cost · Read-only AWS access · You only pay when we save you money
-          </p>
+
+          <div className="stats-card" style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 380, flex: '0 0 380px', marginRight: 0 }}>
+            <HeroRightColumn />
+          </div>
         </div>
       </section>
 
@@ -204,7 +361,7 @@ export default function Landing() {
         </div>
         <div className="process-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0 }}>
           {[
-            { num: '01 — Connect', title: 'Read-only access in 5 minutes', desc: 'Create a read-only role in your AWS account in under 5 minutes. We never write to your infrastructure.' },
+            { num: '01 — Connect', title: 'Read-only access in 5 minutes', desc: 'Create a read-only role in your cloud account in under 5 minutes. We never write to your infrastructure.' },
             { num: '02 — Analyze', title: 'We scan every resource', desc: 'We check every resource against 50+ proven cost patterns. No agents, no scripts, nothing to install.' },
             { num: '03 — Fix', title: 'Prioritized report, delivered', desc: 'You get a clear report with exactly what to fix and how much you\'ll save. Quick wins first.' },
           ].map((step, i) => (
@@ -234,7 +391,7 @@ export default function Landing() {
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, #0E0E0C 0%, transparent 25%, transparent 75%, #111110 100%)' }} />
         <div className="fade-up" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '0.5rem', textAlign: 'center', padding: '0 1.5rem' }}>
           <p style={{ fontSize: 'clamp(2.5rem, 8vw, 3.5rem)', fontWeight: 700, color: '#F5F4F0', letterSpacing: '-0.03em', lineHeight: 1 }}>20–40%</p>
-          <p style={{ fontSize: 13, color: 'rgba(245,244,240,0.35)', letterSpacing: '0.04em' }}>of the average AWS bill is waste that goes undetected</p>
+          <p style={{ fontSize: 13, color: 'rgba(245,244,240,0.35)', letterSpacing: '0.04em' }}>of the average cloud bill is waste that goes undetected</p>
         </div>
       </div>
 
@@ -243,17 +400,17 @@ export default function Landing() {
         <div className="fade-up">
           <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#555552', marginBottom: '1rem' }}>What we find</p>
           <h2 style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: '1rem', color: '#F5F4F0' }}>
-            The waste AWS doesn't surface
+            The waste your cloud provider doesn't surface
           </h2>
           <p style={{ fontSize: '0.95rem', color: '#888884', lineHeight: 1.75, maxWidth: 500, marginBottom: '3rem' }}>
-            These are the three most common sources of overspend we find in AWS accounts. Most teams don't know they exist until we show them.
+            These are the three most common sources of overspend we find across cloud accounts. Most teams don't know they exist until we show them.
           </p>
         </div>
         <div className="findings-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: '#1E1E1C', border: '1px solid #1E1E1C', borderRadius: 10, overflow: 'hidden' }}>
           {[
-            { sev: 'Critical', sevColor: '#F87171', title: 'Oversized EC2 instances', desc: 'Instances running at under 10% CPU average. The most common source of AWS waste — and the easiest to fix once you know where to look.', range: '$400–800/mo' },
-            { sev: 'High', sevColor: '#FBBF24', title: 'Forgotten idle resources', desc: 'Unattached EBS volumes, unassociated Elastic IPs, idle load balancers. All billing you. All fixable today with zero risk.', range: '$200–500/mo' },
-            { sev: 'High', sevColor: '#60A5FA', title: 'Missing Savings Plans', desc: 'Always-on workloads paying On-Demand rates. Savings Plans reduce this by 30–40% immediately with zero architecture changes.', range: '$300–600/mo' },
+            { sev: 'Critical', sevColor: '#F87171', title: 'Oversized compute instances', desc: 'Instances running at under 10% CPU average. The most common source of cloud waste — and the easiest to fix once you know where to look.', range: '$400–800/mo' },
+            { sev: 'High', sevColor: '#FBBF24', title: 'Forgotten idle resources', desc: 'Orphaned volumes, unassociated IPs, idle load balancers. All billing you. All fixable today with zero risk.', range: '$200–500/mo' },
+            { sev: 'High', sevColor: '#60A5FA', title: 'Missing reserved capacity discounts', desc: 'Always-on workloads paying on-demand rates. Reserved capacity cuts this by 30–40% immediately with zero architecture changes.', range: '$300–600/mo' },
           ].map((card, i) => (
             <div key={i} className="fade-up" style={{ background: '#111110', padding: '2rem', transition: 'background 200ms' }}
               onMouseEnter={e => e.currentTarget.style.background = '#161614'}
@@ -280,7 +437,7 @@ export default function Landing() {
           <p style={{ fontSize: 'clamp(1rem, 3vw, 1.2rem)', fontWeight: 500, color: 'rgba(245,244,240,0.65)', maxWidth: 560, lineHeight: 1.55, letterSpacing: '-0.01em' }}>
             "The report found $1,200/month in waste we had no idea existed. Paid for itself in the first week."
           </p>
-          <p style={{ fontSize: 12, color: 'rgba(245,244,240,0.2)' }}>— Early access customer, SaaS startup on AWS</p>
+          <p style={{ fontSize: 12, color: 'rgba(245,244,240,0.2)' }}>— Early access customer, SaaS startup</p>
         </div>
       </div>
 
@@ -307,7 +464,7 @@ export default function Landing() {
             <p style={{ fontSize: 12, color: '#888884', marginBottom: '0.5rem' }}>of verified savings</p>
             <p style={{ fontSize: 12, color: '#555552', marginBottom: '1.75rem' }}>You pay nothing until we save you money</p>
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem', borderTop: '1px solid #1E1E1C', paddingTop: '1.25rem', flex: 1 }}>
-              {['Up to 3 AWS accounts', 'Full AI cost audit', 'Monthly re-scans', 'Email findings report', '30-day savings verification'].map((f, i) => (
+              {['Up to 3 cloud accounts', 'Full AI cost audit', 'Monthly re-scans', 'Email findings report', 'Autopilot included ✦'].map((f, i) => (
                 <li key={i} style={{ fontSize: 13, color: '#888884', padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ color: '#3B82F6', fontSize: 14, flexShrink: 0 }}>✓</span>{f}
                 </li>
@@ -333,7 +490,7 @@ export default function Landing() {
             <p style={{ fontSize: 12, color: '#888884', marginBottom: '0.5rem' }}>of verified savings</p>
             <p style={{ fontSize: 12, color: '#555552', marginBottom: '1.75rem' }}>Volume discount for larger savings</p>
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 2rem', borderTop: '1px solid #1E1E1C', paddingTop: '1.25rem', flex: 1 }}>
-              {['Unlimited AWS accounts', 'Everything in Standard', 'Slack alerts', 'Priority support', 'Quarterly business review'].map((f, i) => (
+              {['Unlimited cloud accounts', 'Everything in Standard', 'Autopilot included ✦', 'Slack alerts', 'Priority support', 'Quarterly business review'].map((f, i) => (
                 <li key={i} style={{ fontSize: 13, color: '#888884', padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ color: '#3B82F6', fontSize: 14, flexShrink: 0 }}>✓</span>{f}
                 </li>
@@ -380,10 +537,10 @@ export default function Landing() {
             EARLY ACCESS
           </p>
           <h2 style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: '1rem', color: '#F5F4F0' }}>
-            Ready to find your AWS waste?
+            Ready to stop overpaying your cloud providers?
           </h2>
           <p style={{ fontSize: '0.95rem', color: '#888884', lineHeight: 1.75, marginBottom: '2rem' }}>
-            Connect your AWS account in 5 minutes. You only pay when we save you money.
+            Connect your cloud account in 5 minutes. You only pay when we save you money.
           </p>
           <Link to="/signup" style={{
             display: 'inline-block', background: '#3B82F6', color: '#fff',
@@ -418,14 +575,14 @@ export default function Landing() {
             ) : (
               <>
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: '#F5F4F0', marginBottom: 8 }}>Get in touch</h2>
-                <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>Tell us about your AWS environment and we'll get back to you within 24 hours.</p>
+                <p style={{ fontSize: 14, color: '#6b7280', marginBottom: 24 }}>Tell us about your cloud environment and we'll get back to you within 24 hours.</p>
                 <input type="text" placeholder="Your name" value={contactForm.name}
                   onChange={e => setContactForm(p => ({ ...p, name: e.target.value }))}
                   style={{ width: '100%', background: '#111110', border: '1px solid #2a2a28', borderRadius: 6, padding: '10px 14px', color: '#F5F4F0', fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none' }} />
                 <input type="email" placeholder="Work email" value={contactForm.email}
                   onChange={e => setContactForm(p => ({ ...p, email: e.target.value }))}
                   style={{ width: '100%', background: '#111110', border: '1px solid #2a2a28', borderRadius: 6, padding: '10px 14px', color: '#F5F4F0', fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none' }} />
-                <textarea placeholder="Tell us about your AWS setup — number of accounts, rough monthly spend, main services used." rows={4}
+                <textarea placeholder="Tell us about your cloud setup — number of accounts, rough monthly spend, main services used." rows={4}
                   value={contactForm.message} onChange={e => setContactForm(p => ({ ...p, message: e.target.value }))}
                   style={{ width: '100%', background: '#111110', border: '1px solid #2a2a28', borderRadius: 6, padding: '10px 14px', color: '#F5F4F0', fontSize: 14, marginBottom: 12, boxSizing: 'border-box', outline: 'none', resize: 'vertical' }} />
                 <button onClick={handleContactSubmit}
@@ -439,22 +596,14 @@ export default function Landing() {
       )}
 
       {/* FOOTER */}
-      <footer className="footer" style={{ padding: '2rem 2.5rem', borderTop: '1px solid #1E1E1C', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, fontWeight: 600 }}>
-          <div style={{ width: 26, height: 26, borderRadius: 6, background: '#1A1A18', border: '1px solid #333330', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#3B82F6' }}>V</div>
-          Vaultix AI
+      <footer className="footer" style={{ padding: '24px 48px', display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div />
+        <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+          <a href="/privacy" style={{ fontSize: 13, color: '#6b7280', textDecoration: 'none', cursor: 'pointer' }}>Privacy</a>
+          <a href="/terms" style={{ fontSize: 13, color: '#6b7280', textDecoration: 'none', cursor: 'pointer' }}>Terms</a>
+          <button onClick={() => { setShowContact(true); setContactSent(false); setContactForm({ name: '', email: '', message: '' }) }} style={{ fontSize: 13, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Contact</button>
         </div>
-        <div className="footer-links" style={{ display: 'flex', gap: '1.5rem' }}>
-          {['Privacy', 'Terms'].map(l => (
-            <a key={l} href="#" style={{ fontSize: 13, color: '#555552', textDecoration: 'none', transition: 'color 150ms' }}
-              onMouseEnter={e => e.target.style.color = '#888884'}
-              onMouseLeave={e => e.target.style.color = '#555552'}>{l}</a>
-          ))}
-          <a href="mailto:hello@vaultixai.app" style={{ fontSize: 13, color: '#555552', textDecoration: 'none', transition: 'color 150ms' }}
-            onMouseEnter={e => e.target.style.color = '#888884'}
-            onMouseLeave={e => e.target.style.color = '#555552'}>Contact</a>
-        </div>
-        <p style={{ fontSize: 12, color: '#333330' }}>© 2026 Vaultix AI · Built for engineers, by engineers.</p>
+        <p style={{ fontSize: 12, color: '#444', textAlign: 'right', margin: 0 }}>© 2026 Vaultix AI · Built for engineers, by engineers.</p>
       </footer>
     </div>
   )

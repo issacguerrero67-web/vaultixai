@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import AccountSwitcher from '../components/AccountSwitcher'
+import { useUserPlan } from '../hooks/useUserPlan'
 
 const geistFontLink = document.createElement('link')
 geistFontLink.rel = 'stylesheet'
@@ -12,8 +14,9 @@ if (!document.head.querySelector('[href*="Geist"]')) {
 const NAV_ITEMS = [
   { label: 'Dashboard',    icon: '⊡', path: '/dashboard' },
   { label: 'Reports',      icon: '≡', path: '/dashboard/reports' },
-  { label: 'Billing',      icon: '◈', path: '/dashboard/billing' },
-  { label: 'AWS Accounts', icon: '⊕', path: '/dashboard/accounts' },
+  { label: 'Billing',      icon: '◇', path: '/dashboard/billing' },
+  { label: 'Cloud Accounts', icon: '⊕', path: '/dashboard/accounts' },
+  { label: 'Autopilot',    icon: '✦', path: '/dashboard/autopilot' },
   { label: 'Settings',     icon: '⊙', path: '/dashboard/settings' },
 ]
 
@@ -45,6 +48,7 @@ const SEVERITY_STYLES = {
 export default function Dashboard() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { isFree } = useUserPlan()
 
   const [userEmail, setUserEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
@@ -54,6 +58,8 @@ export default function Dashboard() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [auditError, setAuditError] = useState('')
   const [awsConnected, setAwsConnected] = useState(null)
+  const [accounts, setAccounts] = useState([])
+  const [activeAccountId, setActiveAccountId] = useState(() => localStorage.getItem('vaultix_active_account') || null)
   const [reportCount, setReportCount] = useState(0)
   const [latestReport, setLatestReport] = useState(null)
   const [hoveredRow, setHoveredRow] = useState(null)
@@ -74,23 +80,36 @@ export default function Dashboard() {
       if (!session) { navigate('/login'); return }
       setUserEmail(session.user.email)
 
-      const [accountsRes, reportsCountRes, latestReportRes, profileRes] = await Promise.all([
-        supabase.from('aws_accounts').select('id').eq('user_id', session.user.id).limit(1),
+      const [accountsRes, reportsCountRes, profileRes] = await Promise.all([
+        supabase.from('aws_accounts').select('id, account_name').eq('user_id', session.user.id),
         supabase.from('audit_reports').select('id', { count: 'exact', head: true }).eq('user_id', session.user.id),
-        supabase
-          .from('audit_reports')
-          .select('id, findings, total_savings, created_at, status')
-          .eq('user_id', session.user.id)
-          .eq('status', 'complete')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle(),
         supabase.from('profiles').select('full_name').eq('id', session.user.id).single(),
       ])
 
-      setAwsConnected(!!(accountsRes.data && accountsRes.data.length > 0))
+      const allAccounts = accountsRes.data ?? []
+      setAccounts(allAccounts)
+      setAwsConnected(allAccounts.length > 0)
+
+      const storedId = localStorage.getItem('vaultix_active_account')
+      const activeId = storedId && allAccounts.find(a => a.id === storedId)
+        ? storedId
+        : allAccounts[0]?.id ?? null
+      setActiveAccountId(activeId)
+
+      if (activeId) {
+        const { data: latestReportRes } = await supabase
+          .from('audit_reports')
+          .select('id, findings, total_savings, created_at, status')
+          .eq('user_id', session.user.id)
+          .eq('aws_account_id', activeId)
+          .eq('status', 'complete')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        setLatestReport(latestReportRes ?? null)
+      }
+
       setReportCount(reportsCountRes.count ?? 0)
-      setLatestReport(latestReportRes.data ?? null)
       if (profileRes.data?.full_name) setDisplayName(profileRes.data.full_name)
       setLoading(false)
     }
@@ -100,6 +119,22 @@ export default function Dashboard() {
   function dismissWelcome() {
     localStorage.setItem('vaultix_welcome_dismissed', 'true')
     setShowWelcome(false)
+  }
+
+  async function handleAccountSwitch(accountId) {
+    setActiveAccountId(accountId)
+    localStorage.setItem('vaultix_active_account', accountId)
+    setLatestReport(null)
+    const { data } = await supabase
+      .from('audit_reports')
+      .select('id, findings, total_savings, created_at, status')
+      .eq('user_id', (await supabase.auth.getSession()).data.session?.user.id)
+      .eq('aws_account_id', accountId)
+      .eq('status', 'complete')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    setLatestReport(data ?? null)
   }
 
   async function handleSignOut() {
@@ -286,13 +321,21 @@ export default function Dashboard() {
           padding: '20px 32px',
           borderBottom: '1px solid #1E1E1C',
           display: 'flex',
-          alignItems: runningAudit ? 'flex-start' : 'center',
+          alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 8,
         }}>
-          <h1 style={{ fontSize: isMobile ? 18 : 24, fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
-            Dashboard
-          </h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0, flexShrink: 0 }}>
+            <h1 style={{ fontSize: isMobile ? 18 : 24, fontWeight: 600, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em', flexShrink: 0 }}>
+              Dashboard
+            </h1>
+            <AccountSwitcher
+              activeAccountId={activeAccountId}
+              onAccountChange={handleAccountSwitch}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
             <Link
               to="/dashboard/reports"
               style={{
@@ -309,7 +352,7 @@ export default function Dashboard() {
             </Link>
             <button
               disabled={runningAudit || awsConnected === false}
-              title={awsConnected === false ? 'Connect an AWS account first' : undefined}
+              title={awsConnected === false ? 'Connect a cloud account first' : undefined}
               style={{
                 backgroundColor: runningAudit ? '#2563EB' : '#3B82F6',
                 color: '#fff',
@@ -321,6 +364,8 @@ export default function Dashboard() {
                 cursor: (runningAudit || awsConnected === false) ? 'not-allowed' : 'pointer',
                 opacity: runningAudit ? 0.7 : awsConnected === false ? 0.4 : 1,
                 transition: 'transform 150ms, box-shadow 150ms',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
               }}
               onMouseEnter={e => { if (!runningAudit && awsConnected !== false) { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' } }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
@@ -331,13 +376,13 @@ export default function Dashboard() {
           </div>
           {runningAudit && (
             <p style={{ color: '#6B7280', fontSize: '13px', margin: '8px 0 0' }}>
-              Analyzing your AWS account… {elapsedSeconds}s
+              Analyzing your cloud account… {elapsedSeconds}s
             </p>
           )}
           {auditError && !runningAudit && (
             <p style={{ color: '#EF4444', fontSize: '13px', margin: '8px 0 0' }}>
               {auditError}{' '}
-              <a href="/dashboard/connect" style={{ color: '#3B82F6' }}>Connect AWS →</a>
+              <a href="/dashboard/connect" style={{ color: '#3B82F6' }}>Connect Account →</a>
             </p>
           )}
         </div>
@@ -345,12 +390,12 @@ export default function Dashboard() {
         {/* AWS connection status bar */}
         <div style={{ padding: '6px 32px', borderBottom: '1px solid #1E1E1C', backgroundColor: '#0D0D0D' }}>
           {awsConnected === true && (
-            <p style={{ margin: 0, fontSize: 12, color: '#34D399' }}>✓ AWS account connected</p>
+            <p style={{ margin: 0, fontSize: 12, color: '#34D399' }}>✓ Cloud account connected</p>
           )}
           {awsConnected === false && (
             <p style={{ margin: 0, fontSize: 12, color: '#666662' }}>
-              No AWS account connected —{' '}
-              <Link to="/dashboard/connect" style={{ color: '#3B82F6', textDecoration: 'none' }}>Connect AWS →</Link>
+              No cloud account connected —{' '}
+              <Link to="/dashboard/connect" style={{ color: '#3B82F6', textDecoration: 'none' }}>Connect Account →</Link>
             </p>
           )}
         </div>
@@ -371,10 +416,10 @@ export default function Dashboard() {
                 GETTING STARTED
               </p>
               <p style={{ fontSize: 18, fontWeight: 600, color: '#F5F4F0', margin: '0 0 20px' }}>
-                You're 3 steps away from finding your AWS waste.
+                You're 3 steps away from finding your cloud waste.
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                {['1 — Connect AWS', '2 — Run Audit', '3 — View Report'].map((step, i) => (
+                {['1 — Connect Account', '2 — Run Audit', '3 — View Report'].map((step, i) => (
                   <>
                     <span key={step} style={{ background: '#2a2a28', borderRadius: 20, padding: '6px 14px', fontSize: 13, color: '#9ca3af' }}>
                       {step}
@@ -397,7 +442,7 @@ export default function Dashboard() {
                     display: 'inline-block',
                   }}
                 >
-                  Connect your AWS Account →
+                  Connect your Cloud Account →
                 </Link>
                 <button
                   onClick={dismissWelcome}
@@ -518,12 +563,46 @@ export default function Dashboard() {
                   ))}
                 </div>
               )}
+
+              {isFree && (
+                <div style={{
+                  marginTop: 24,
+                  background: 'rgba(59,130,246,0.08)',
+                  border: '1px solid rgba(59,130,246,0.25)',
+                  borderRadius: 8,
+                  padding: '20px 24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: 16,
+                }}>
+                  <div>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: '#F5F4F0', margin: '0 0 4px' }}>
+                      🔒 Unlock AI-powered cost optimization
+                    </p>
+                    <p style={{ fontSize: 13, color: '#9ca3af', margin: 0 }}>
+                      Upgrade to use Autopilot AI chat, execute fixes automatically, and view report history.
+                    </p>
+                  </div>
+                  <Link
+                    to="/dashboard/billing"
+                    style={{
+                      backgroundColor: '#3B82F6', color: '#fff', textDecoration: 'none',
+                      borderRadius: 8, padding: '9px 18px', fontSize: 14, fontWeight: 600,
+                      whiteSpace: 'nowrap', flexShrink: 0,
+                    }}
+                  >
+                    Upgrade Plan →
+                  </Link>
+                </div>
+              )}
             </>
           ) : latestReport ? (
             /* Audit ran but no findings */
             <div style={{ background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8, padding: 32, textAlign: 'center', marginTop: 24 }}>
               <p style={{ color: '#6b7280', fontSize: 14, margin: 0 }}>No waste found in your last audit.</p>
-              <p style={{ color: '#444', fontSize: 13, marginTop: 8, margin: '8px 0 0' }}>Your AWS account looks clean. We'll re-scan automatically every 30 days.</p>
+              <p style={{ color: '#444', fontSize: 13, marginTop: 8, margin: '8px 0 0' }}>Your cloud account looks clean. We'll re-scan automatically every 30 days.</p>
             </div>
           ) : (
             /* No audit yet — original empty state */
@@ -547,10 +626,10 @@ export default function Dashboard() {
                 <CloudIcon />
               </div>
               <h2 style={{ fontSize: '18px', fontWeight: 600, color: '#F5F4F0', margin: '0 0 8px', letterSpacing: '-0.02em' }}>
-                No AWS accounts connected yet
+                No cloud accounts connected yet
               </h2>
               <p style={{ color: '#666662', fontSize: '14px', lineHeight: 1.7, maxWidth: '380px', margin: '0 0 28px' }}>
-                Connect your first AWS account to run your first audit and start finding savings.
+                Connect your first cloud account to run your first audit and start finding savings.
               </p>
               <Link
                 to="/dashboard/connect"
@@ -568,7 +647,7 @@ export default function Dashboard() {
                 onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(59,130,246,0.4)' }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'none' }}
               >
-                Connect AWS Account →
+                Connect Cloud Account →
               </Link>
             </div>
           )}
@@ -584,10 +663,10 @@ export default function Dashboard() {
         }}>
           {[
             { label: 'Dashboard', path: '/dashboard', icon: '⊡' },
-            { label: 'Reports', path: '/dashboard/reports', icon: '≡' },
-            { label: 'Billing', path: '/dashboard/billing', icon: '◇' },
-            { label: 'Accounts', path: '/dashboard/accounts', icon: '⊕' },
-            { label: 'Settings', path: '/dashboard/settings', icon: '⊙' },
+            { label: 'Reports',   path: '/dashboard/reports', icon: '≡' },
+            { label: 'Autopilot', path: '/dashboard/autopilot', icon: '✦' },
+            { label: 'Accounts',  path: '/dashboard/accounts', icon: '⊕' },
+            { label: 'Settings',  path: '/dashboard/settings', icon: '⊙' },
           ].map(({ label, path, icon }) => {
             const isActive = window.location.pathname === path
             return (

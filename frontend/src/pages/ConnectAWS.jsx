@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
-const CF_TEMPLATE_URL = 'https://vaultixai.app/cloudformation/vaultix-read-only-role.yaml'
+const CF_TEMPLATE_URL = 'https://vaultixai-cloudformation-templates.s3.us-east-2.amazonaws.com/vaultix-read-only-role.yaml'
 
 const geistFontLink = document.createElement('link')
 geistFontLink.rel = 'stylesheet'
@@ -19,6 +19,13 @@ export default function ConnectAWS() {
   const [accountIdError, setAccountIdError] = useState('')
   const [accountIdFocused, setAccountIdFocused] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [externalId] = useState(() => {
+    const stored = localStorage.getItem('vaultix_connect_external_id')
+    if (stored) return stored
+    const newId = crypto.randomUUID()
+    localStorage.setItem('vaultix_connect_external_id', newId)
+    return newId
+  })
   const [verifying, setVerifying] = useState(false)
   const [verifyStatus, setVerifyStatus] = useState(null) // 'success' | 'error'
   const [error, setError] = useState('')
@@ -46,7 +53,7 @@ export default function ConnectAWS() {
       .eq('user_id', session.user.id)
 
     if (existingAccounts && existingAccounts.length > 0) {
-      setError('You already have a connected AWS account. Go to your dashboard to run an audit or view your report.')
+      setError('You already have a connected cloud account. Go to your dashboard to run an audit or view your report.')
       return
     }
 
@@ -71,9 +78,10 @@ export default function ConnectAWS() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ accountId, roleArn }),
+        body: JSON.stringify({ accountId, roleArn, external_id: externalId, account_name: 'My AWS Account' }),
       })
       if (res.ok) {
+        localStorage.removeItem('vaultix_connect_external_id')
         setVerifyStatus('success')
       } else {
         setVerifyStatus('error')
@@ -240,60 +248,84 @@ export default function ConnectAWS() {
               <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.03em', color: '#F5F4F0', margin: '0 0 8px' }}>
                 Deploy the IAM role
               </h1>
-              <p style={{ color: '#666662', fontSize: 14, lineHeight: 1.7, margin: '0 0 28px' }}>
-                This creates a read-only IAM role that lets Vaultix AI scan your account. We never write to your infrastructure.
+              <p style={{ fontSize: 14, color: '#9ca3af', marginBottom: 20, lineHeight: 1.6 }}>
+                Click the button below to open AWS CloudFormation with the template pre-loaded.
+                Make sure you're logged into the correct AWS account first.
               </p>
 
-              {/* Instructions */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 28 }}>
-                {[
-                  'Log into your AWS account and go to CloudFormation',
-                  'Create a new stack using the template URL below',
-                  'This creates a read-only IAM role that lets Vaultix AI scan your account',
-                ].map((step, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                    <div style={{
-                      width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-                      backgroundColor: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 11, fontWeight: 700, color: '#3B82F6', marginTop: 1,
-                    }}>
-                      {i + 1}
-                    </div>
-                    <p style={{ fontSize: 14, color: '#888884', lineHeight: 1.6, margin: 0 }}>{step}</p>
-                  </div>
-                ))}
-              </div>
+              {/* One-click deploy button */}
+              <a
+                href={`https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=${encodeURIComponent(CF_TEMPLATE_URL)}&stackName=VaultixReadOnlyRole&param_ExternalId=${externalId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  background: '#FF9900',
+                  color: '#000',
+                  borderRadius: 6,
+                  padding: '12px 20px',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  marginBottom: 20,
+                }}
+              >
+                🚀 Deploy to AWS →
+              </a>
 
-              {/* Template URL */}
-              <div style={{ marginBottom: 28 }}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#888884', marginBottom: 6 }}>
-                  CloudFormation Template URL
-                </label>
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 0,
-                  backgroundColor: '#0D0D0D', border: '1px solid #222220', borderRadius: 8, overflow: 'hidden',
-                }}>
-                  <span style={{
-                    flex: 1, padding: '10px 14px', fontSize: 13, color: '#888884',
-                    fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>
-                    {CF_TEMPLATE_URL}
-                  </span>
-                  <button
-                    onClick={handleCopy}
+              {/* Copy URL fallback */}
+              <div style={{ marginTop: 16 }}>
+                <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>
+                  Or copy the template URL manually:
+                </p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    readOnly
+                    value={CF_TEMPLATE_URL}
                     style={{
-                      flexShrink: 0, padding: '10px 16px',
-                      backgroundColor: copied ? 'rgba(16,185,129,0.1)' : 'rgba(59,130,246,0.08)',
-                      border: 'none', borderLeft: '1px solid #222220',
-                      color: copied ? '#6EE7B7' : '#3B82F6',
-                      fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                      transition: 'all 150ms',
+                      flex: 1,
+                      background: '#111110',
+                      border: '1px solid #2a2a28',
+                      borderRadius: 6,
+                      padding: '8px 12px',
+                      color: '#6b7280',
+                      fontSize: 12,
+                      fontFamily: 'monospace',
+                      outline: 'none',
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(CF_TEMPLATE_URL)
+                      setCopied(true)
+                      setTimeout(() => setCopied(false), 2000)
+                    }}
+                    style={{
+                      background: '#2a2a28',
+                      border: '1px solid #3a3a38',
+                      color: '#F5F4F0',
+                      borderRadius: 6,
+                      padding: '8px 14px',
+                      fontSize: 13,
+                      cursor: 'pointer',
                     }}
                   >
                     {copied ? 'Copied!' : 'Copy'}
                   </button>
                 </div>
+              </div>
+
+              {/* Post-deploy instructions */}
+              <div style={{ marginTop: 20, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 8, padding: '14px 16px', marginBottom: 28 }}>
+                <p style={{ fontSize: 13, color: '#9ca3af', margin: 0, lineHeight: 1.6 }}>
+                  <strong style={{ color: '#F5F4F0' }}>After clicking Deploy:</strong><br />
+                  1. AWS CloudFormation will open with the template pre-loaded<br />
+                  2. Scroll down and check "I acknowledge that AWS CloudFormation might create IAM resources"<br />
+                  3. Click "Create stack"<br />
+                  4. Wait ~30 seconds for the stack to complete, then click Next below
+                </p>
               </div>
 
               <div style={{ display: 'flex', gap: 12 }}>

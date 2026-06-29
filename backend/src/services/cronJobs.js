@@ -73,11 +73,48 @@ async function runMonthlyRescans() {
         const userEmail = account.profiles?.email
         if (userEmail) {
           try {
-            await sendAuditReport(userEmail, findings, totalSavings, account.account_name)
-            console.log(`[cron] Report email sent to ${userEmail}`)
+            const { data: userPrefs } = await supabase
+              .from('profiles')
+              .select('notification_preferences, webhook_url')
+              .eq('id', account.user_id)
+              .single()
+
+            const shouldSendEmail = userPrefs?.notification_preferences?.monthly_summary !== false
+            if (shouldSendEmail) {
+              await sendAuditReport(userEmail, findings, totalSavings, account.account_name)
+              console.log(`[cron] Report email sent to ${userEmail}`)
+            } else {
+              console.log(`[cron] Email skipped (user opted out): ${userEmail}`)
+            }
           } catch (emailErr) {
             console.error(`[cron] Email failed for account id=${account.id}:`, emailErr.message)
           }
+        }
+
+        try {
+          const { data: webhookProfile } = await supabase
+            .from('profiles')
+            .select('webhook_url')
+            .eq('id', account.user_id)
+            .single()
+
+          if (webhookProfile?.webhook_url) {
+            await fetch(webhookProfile.webhook_url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                event: 'audit.complete',
+                account_id: account.id,
+                account_name: account.account_name,
+                findings_count: findings.length,
+                total_savings: totalSavings,
+                timestamp: new Date().toISOString(),
+              }),
+            })
+            console.log(`[cron] Webhook fired for account id=${account.id}`)
+          }
+        } catch (webhookErr) {
+          console.error(`[cron] Webhook failed for account id=${account.id}:`, webhookErr.message)
         }
 
         console.log(`[cron] Completed account id=${account.id} — ${findings.length} findings, $${totalSavings}/mo savings`)

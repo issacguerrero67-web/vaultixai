@@ -12,8 +12,9 @@ if (!document.head.querySelector('[href*="Geist"]')) {
 const NAV_ITEMS = [
   { label: 'Dashboard',    icon: '⊡', path: '/dashboard' },
   { label: 'Reports',      icon: '≡', path: '/dashboard/reports' },
-  { label: 'Billing',      icon: '◈', path: '/dashboard/billing' },
-  { label: 'AWS Accounts', icon: '⊕', path: '/dashboard/accounts' },
+  { label: 'Billing',      icon: '◇', path: '/dashboard/billing' },
+  { label: 'Cloud Accounts', icon: '⊕', path: '/dashboard/accounts' },
+  { label: 'Autopilot',    icon: '✦', path: '/dashboard/autopilot' },
   { label: 'Settings',     icon: '⊙', path: '/dashboard/settings' },
 ]
 
@@ -27,8 +28,12 @@ export default function AWSAccounts() {
   const [displayName, setDisplayName] = useState('')
   const [userId, setUserId] = useState('')
   const [accounts, setAccounts] = useState([])
+  const [userPlan, setUserPlan] = useState(null)
   const [confirmingDisconnect, setConfirmingDisconnect] = useState(null)
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+  const [expandedPrefs, setExpandedPrefs] = useState({})
+  const [accountPrefs, setAccountPrefs] = useState({})
+  const [prefsSaved, setPrefsSaved] = useState({})
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768)
@@ -44,16 +49,26 @@ export default function AWSAccounts() {
       setUserEmail(user.email)
       setUserId(user.id)
 
-      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single()
+      const { data: profile } = await supabase.from('profiles').select('full_name, plan').eq('id', user.id).single()
       if (profile?.full_name) setDisplayName(profile.full_name)
+      if (profile?.plan) setUserPlan(profile.plan)
 
       const { data } = await supabase
         .from('aws_accounts')
-        .select('id, account_name, role_arn, last_audit_at, created_at')
+        .select('id, account_name, role_arn, last_audit_at, created_at, scan_preferences')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      setAccounts(data ?? [])
+      const accountsData = data ?? []
+      setAccounts(accountsData)
+
+      const defaultPrefs = { regions: ['us-east-1'], services: ['EC2', 'RDS', 'S3', 'EBS', 'Network'] }
+      const prefsMap = {}
+      for (const account of accountsData) {
+        prefsMap[account.id] = account.scan_preferences || defaultPrefs
+      }
+      setAccountPrefs(prefsMap)
+
       setLoading(false)
     }
     init()
@@ -74,6 +89,13 @@ export default function AWSAccounts() {
   function formatDate(ts) {
     return new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
   }
+
+  function extractAccountId(roleArn) {
+    return roleArn?.match(/::(\d+):/)?.[1] ?? null
+  }
+
+  const ALL_REGIONS = ['us-east-1', 'us-east-2', 'us-west-1', 'us-west-2', 'eu-west-1', 'eu-west-2', 'eu-central-1', 'ap-southeast-1', 'ap-northeast-1']
+  const ALL_SERVICES = ['EC2', 'RDS', 'S3', 'EBS', 'Network', 'SavingsPlans']
 
   if (loading) {
     return (
@@ -177,23 +199,53 @@ export default function AWSAccounts() {
       <main style={{ marginLeft: isMobile ? 0 : 240, flex: 1, padding: isMobile ? '16px 16px 70px' : 32, minWidth: 0, overflowX: 'hidden' }}>
 
         {/* Page header */}
-        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: 12, marginBottom: 28 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
-            AWS Accounts
-          </h1>
-          <button
-            onClick={() => navigate('/dashboard/connect')}
-            style={{
-              background: '#3B82F6', color: 'white', border: 'none',
-              borderRadius: 6, padding: '10px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-              transition: 'background 150ms', width: isMobile ? '100%' : undefined,
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = '#2563EB'}
-            onMouseLeave={e => e.currentTarget.style.background = '#3B82F6'}
-          >
-            Connect New Account
-          </button>
-        </div>
+        {(() => {
+          const maxAccounts = (userPlan === 'team' || userPlan === 'enterprise') ? Infinity : 3
+          const atLimit = accounts.length >= maxAccounts
+          return (
+            <>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', gap: 12, marginBottom: atLimit ? 16 : 28 }}>
+                <h1 style={{ fontSize: 24, fontWeight: 700, color: '#F5F4F0', margin: 0, letterSpacing: '-0.02em' }}>
+                  Cloud Accounts
+                  <span style={{ fontSize: 13, fontWeight: 400, color: '#6b7280', marginLeft: 12 }}>
+                    {accounts.length}{maxAccounts === Infinity ? '' : `/${maxAccounts}`}
+                  </span>
+                </h1>
+                <button
+                  onClick={() => !atLimit && navigate('/dashboard/connect')}
+                  disabled={atLimit}
+                  style={{
+                    background: atLimit ? '#1a1a18' : '#3B82F6',
+                    color: atLimit ? '#555552' : 'white',
+                    border: atLimit ? '1px solid #2a2a28' : 'none',
+                    borderRadius: 6, padding: '10px 18px', fontSize: 14, fontWeight: 600,
+                    cursor: atLimit ? 'not-allowed' : 'pointer',
+                    transition: 'background 150ms', width: isMobile ? '100%' : undefined,
+                  }}
+                  onMouseEnter={e => { if (!atLimit) e.currentTarget.style.background = '#2563EB' }}
+                  onMouseLeave={e => { if (!atLimit) e.currentTarget.style.background = '#3B82F6' }}
+                >
+                  Connect New Account
+                </button>
+              </div>
+
+              {atLimit && userPlan === 'standard' && (
+                <div style={{
+                  background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+                  borderRadius: 8, padding: '14px 20px', marginBottom: 24,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+                }}>
+                  <span style={{ fontSize: 14, color: '#9CA3AF' }}>
+                    You've reached the 3-account limit on the Standard plan.
+                  </span>
+                  <a href="/dashboard/billing" style={{ fontSize: 13, fontWeight: 600, color: '#F59E0B', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                    Upgrade to Team →
+                  </a>
+                </div>
+              )}
+            </>
+          )
+        })()}
 
         {/* Empty state */}
         {accounts.length === 0 ? (
@@ -203,10 +255,10 @@ export default function AWSAccounts() {
           }}>
             <span style={{ fontSize: 32, marginBottom: 12, display: 'block' }}>☁</span>
             <p style={{ fontSize: 16, fontWeight: 600, color: '#F5F4F0', margin: '0 0 8px' }}>
-              No AWS accounts connected
+              No cloud accounts connected
             </p>
             <p style={{ fontSize: 14, color: '#6b7280', margin: '0 0 24px' }}>
-              Connect your first AWS account to start finding savings.
+              Connect your first cloud account to start finding savings.
             </p>
             <button
               onClick={() => navigate('/dashboard/connect')}
@@ -215,7 +267,7 @@ export default function AWSAccounts() {
                 borderRadius: 6, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
               }}
             >
-              Connect AWS Account →
+              Connect Cloud Account →
             </button>
           </div>
         ) : (
@@ -224,86 +276,131 @@ export default function AWSAccounts() {
               <div key={account.id} style={{
                 background: '#1a1a18', border: '1px solid #2a2a28',
                 borderRadius: 8, padding: isMobile ? 16 : '20px 24px', marginBottom: 12,
-                display: 'flex', flexDirection: isMobile ? 'column' : 'row',
-                alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between',
               }}>
-                {/* Left: account info */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, width: '100%' }}>
-                  <span style={{ fontSize: 15, fontWeight: 600, color: '#F5F4F0' }}>
-                    {account.account_name}
-                  </span>
-                  <span style={{ fontSize: 12, color: '#6b7280', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap', wordBreak: isMobile ? 'break-all' : undefined, maxWidth: isMobile ? '100%' : 420 }}>
-                    {account.role_arn}
-                  </span>
-                  <span style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
-                    {account.last_audit_at
-                      ? 'Last audit: ' + formatDate(account.last_audit_at)
-                      : 'No audit run yet'}
-                  </span>
-                </div>
+                {/* Top row */}
+                <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between' }}>
+                  {/* Left: account info */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, width: '100%' }}>
+                    <span style={{ fontSize: 15, fontWeight: 600, color: '#F5F4F0' }}>
+                      {account.account_name}
+                    </span>
+                    <span style={{ fontSize: 12, color: '#6b7280', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: isMobile ? 'normal' : 'nowrap', wordBreak: isMobile ? 'break-all' : undefined, maxWidth: isMobile ? '100%' : 420 }}>
+                      {account.role_arn}
+                    </span>
+                    <span style={{ fontSize: 12, color: '#555552', marginTop: 6 }}>
+                      {extractAccountId(account.role_arn) && (
+                        <span>Account ID: {extractAccountId(account.role_arn)} · </span>
+                      )}
+                      Connected: {formatDate(account.created_at)}
+                      {account.last_audit_at
+                        ? ' · Last audit: ' + formatDate(account.last_audit_at)
+                        : ' · No audit run yet'}
+                    </span>
+                  </div>
 
-                {/* Right: actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, flexWrap: isMobile ? 'wrap' : undefined, marginLeft: isMobile ? 0 : 16, marginTop: isMobile ? 8 : 0 }}>
-                  <span style={{
-                    background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)',
-                    color: '#22c55e', borderRadius: 20, padding: '4px 12px',
-                    fontSize: 12, fontWeight: 600,
-                  }}>
-                    Connected
-                  </span>
+                  {/* Right: actions */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, flexWrap: isMobile ? 'wrap' : undefined, marginLeft: isMobile ? 0 : 16, marginTop: isMobile ? 12 : 0 }}>
+                    <span style={{ background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', color: '#22c55e', borderRadius: 20, padding: '4px 12px', fontSize: 12, fontWeight: 600 }}>
+                      Connected
+                    </span>
 
-                  <button
-                    onClick={() => navigate('/dashboard')}
-                    style={{
-                      background: 'none', border: '1px solid #2a2a28', color: '#F5F4F0',
-                      borderRadius: 6, padding: '7px 14px', fontSize: 13, cursor: 'pointer',
-                      transition: 'border-color 150ms',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = '#3a3a38'}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = '#2a2a28'}
-                  >
-                    Run Audit
-                  </button>
-
-                  {confirmingDisconnect === account.id ? (
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <span style={{ fontSize: 13, color: '#ef4444' }}>Remove?</span>
-                      <button
-                        onClick={() => handleDisconnect(account.id)}
-                        style={{
-                          background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)',
-                          color: '#ef4444', borderRadius: 6, padding: '6px 12px',
-                          fontSize: 13, cursor: 'pointer', marginLeft: 8,
-                        }}
-                      >
-                        Yes
-                      </button>
-                      <button
-                        onClick={() => setConfirmingDisconnect(null)}
-                        style={{
-                          background: 'none', border: '1px solid #2a2a28', color: '#6b7280',
-                          borderRadius: 6, padding: '6px 12px', fontSize: 13,
-                          cursor: 'pointer', marginLeft: 6,
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
                     <button
-                      onClick={() => setConfirmingDisconnect(account.id)}
-                      style={{
-                        background: 'none', border: '1px solid #2a2a28', color: '#6b7280',
-                        borderRadius: 6, padding: '7px 14px', fontSize: 13, cursor: 'pointer',
-                        transition: 'border-color 150ms, color 150ms',
-                      }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#ef4444'; e.currentTarget.style.color = '#ef4444' }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a2a28'; e.currentTarget.style.color = '#6b7280' }}
+                      onClick={() => navigate('/dashboard')}
+                      style={{ background: 'none', border: '1px solid #2a2a28', color: '#F5F4F0', borderRadius: 6, padding: '7px 14px', fontSize: 13, cursor: 'pointer', transition: 'border-color 150ms' }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = '#3a3a38'}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = '#2a2a28'}
                     >
-                      Disconnect
+                      Run Audit
                     </button>
-                  )}
+
+                    <button
+                      onClick={() => setExpandedPrefs(prev => ({ ...prev, [account.id]: !prev[account.id] }))}
+                      style={{ background: 'none', border: '1px solid #2a2a28', color: expandedPrefs[account.id] ? '#3B82F6' : '#6b7280', borderRadius: 6, padding: '7px 14px', fontSize: 13, cursor: 'pointer', transition: 'border-color 150ms, color 150ms' }}
+                      title="Scan Preferences"
+                    >
+                      ⚙ Prefs
+                    </button>
+
+                    {confirmingDisconnect === account.id ? (
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontSize: 13, color: '#ef4444' }}>Remove?</span>
+                        <button onClick={() => handleDisconnect(account.id)} style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 6, padding: '6px 12px', fontSize: 13, cursor: 'pointer', marginLeft: 8 }}>
+                          Yes
+                        </button>
+                        <button onClick={() => setConfirmingDisconnect(null)} style={{ background: 'none', border: '1px solid #2a2a28', color: '#6b7280', borderRadius: 6, padding: '6px 12px', fontSize: 13, cursor: 'pointer', marginLeft: 6 }}>
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmingDisconnect(account.id)}
+                        style={{ background: 'none', border: '1px solid #2a2a28', color: '#6b7280', borderRadius: 6, padding: '7px 14px', fontSize: 13, cursor: 'pointer', transition: 'border-color 150ms, color 150ms' }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#ef4444'; e.currentTarget.style.color = '#ef4444' }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = '#2a2a28'; e.currentTarget.style.color = '#6b7280' }}
+                      >
+                        Disconnect
+                      </button>
+                    )}
+                  </div>
                 </div>
+
+                {/* Collapsible scan preferences panel */}
+                {expandedPrefs[account.id] && (
+                  <div style={{ borderTop: '1px solid #2a2a28', marginTop: 16, paddingTop: 16 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#F5F4F0', marginBottom: 4 }}>Scan Preferences</div>
+                    <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 16 }}>Customize which regions and services Vaultix scans for this account.</div>
+
+                    {/* Regions */}
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', letterSpacing: '0.06em', marginBottom: 8, textTransform: 'uppercase' }}>Regions</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+                      {ALL_REGIONS.map(region => {
+                        const selected = accountPrefs[account.id]?.regions?.includes(region)
+                        return (
+                          <button key={region} onClick={() => {
+                            const current = accountPrefs[account.id]?.regions || []
+                            const updated = current.includes(region) ? current.filter(r => r !== region) : [...current, region]
+                            setAccountPrefs(prev => ({ ...prev, [account.id]: { ...prev[account.id], regions: updated } }))
+                          }}
+                            style={{ background: selected ? 'rgba(59,130,246,0.15)' : '#111110', border: `1px solid ${selected ? '#3B82F6' : '#2a2a28'}`, color: selected ? '#3B82F6' : '#6b7280', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontWeight: selected ? 500 : 400 }}>
+                            {region}
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {/* Services */}
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', letterSpacing: '0.06em', marginBottom: 8, textTransform: 'uppercase' }}>Services</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+                      {ALL_SERVICES.map(service => {
+                        const selected = accountPrefs[account.id]?.services?.includes(service)
+                        return (
+                          <button key={service} onClick={() => {
+                            const current = accountPrefs[account.id]?.services || []
+                            const updated = current.includes(service) ? current.filter(s => s !== service) : [...current, service]
+                            setAccountPrefs(prev => ({ ...prev, [account.id]: { ...prev[account.id], services: updated } }))
+                          }}
+                            style={{ background: selected ? 'rgba(59,130,246,0.15)' : '#111110', border: `1px solid ${selected ? '#3B82F6' : '#2a2a28'}`, color: selected ? '#3B82F6' : '#6b7280', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer', fontWeight: selected ? 500 : 400 }}>
+                            {service}
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {/* Save */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <button
+                        onClick={async () => {
+                          await supabase.from('aws_accounts').update({ scan_preferences: accountPrefs[account.id] }).eq('id', account.id).eq('user_id', userId)
+                          setPrefsSaved(prev => ({ ...prev, [account.id]: true }))
+                          setTimeout(() => setPrefsSaved(prev => ({ ...prev, [account.id]: false })), 2000)
+                        }}
+                        style={{ background: '#3B82F6', color: 'white', border: 'none', borderRadius: 6, padding: '8px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                        Save Preferences
+                      </button>
+                      {prefsSaved[account.id] && <span style={{ color: '#22c55e', fontSize: 13 }}>Saved! ✓</span>}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -319,10 +416,10 @@ export default function AWSAccounts() {
         }}>
           {[
             { label: 'Dashboard', path: '/dashboard', icon: '⊡' },
-            { label: 'Reports', path: '/dashboard/reports', icon: '≡' },
-            { label: 'Billing', path: '/dashboard/billing', icon: '◇' },
-            { label: 'Accounts', path: '/dashboard/accounts', icon: '⊕' },
-            { label: 'Settings', path: '/dashboard/settings', icon: '⊙' },
+            { label: 'Reports',   path: '/dashboard/reports', icon: '≡' },
+            { label: 'Autopilot', path: '/dashboard/autopilot', icon: '✦' },
+            { label: 'Accounts',  path: '/dashboard/accounts', icon: '⊕' },
+            { label: 'Settings',  path: '/dashboard/settings', icon: '⊙' },
           ].map(({ label, path, icon }) => {
             const isActive = window.location.pathname === path
             return (
