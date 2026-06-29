@@ -2,6 +2,26 @@ import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import { rateLimit } from 'express-rate-limit'
+import { RedisStore } from 'rate-limit-redis'
+import Redis from 'ioredis'
+
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+  maxRetriesPerRequest: 1,
+  enableOfflineQueue: false,
+  lazyConnect: true,
+})
+
+redis.on('error', (err) => {
+  // Log but don't crash — limiters fall back to in-memory if Redis is down
+  console.error('[Redis] Connection error:', err.message)
+})
+
+function makeStore(prefix) {
+  return new RedisStore({
+    sendCommand: (...args) => redis.call(...args),
+    prefix: `rl:${prefix}:`,
+  })
+}
 
 import healthRouter from './routes/health.js'
 import auditRouter from './routes/audit.js'
@@ -23,6 +43,7 @@ const globalLimiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
+  store: makeStore('global'),
   message: { error: 'Too many requests. Please try again later.' },
 })
 
@@ -32,6 +53,7 @@ const strictLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  store: makeStore('strict'),
   message: { error: 'Rate limit reached for this endpoint. Please wait before trying again.' },
 })
 
@@ -41,6 +63,7 @@ const awsConnectLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  store: makeStore('aws-connect'),
   message: { error: 'Too many AWS connection attempts.' },
 })
 
@@ -50,6 +73,7 @@ const destructiveLimiter = rateLimit({
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
+  store: makeStore('destructive'),
   message: { error: 'Too many requests on this endpoint.' },
 })
 
@@ -59,6 +83,7 @@ const authLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  store: makeStore('auth'),
   message: { error: 'Too many attempts. Please try again in 15 minutes.' },
 })
 
