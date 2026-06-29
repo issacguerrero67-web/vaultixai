@@ -29,7 +29,6 @@ app.use(helmet())
 const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
   maxRetriesPerRequest: 1,
   enableOfflineQueue: false,
-  lazyConnect: true,
 })
 
 redis.on('error', (err) => {
@@ -44,6 +43,7 @@ function makeStore(prefix) {
   })
 }
 
+// passOnStoreError: true — if Redis is unavailable, fail-open rather than crashing every request
 // Fix 4 — Global rate limiter covering all routes (100 req / 15 min per IP)
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -51,6 +51,7 @@ const globalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: makeStore('global'),
+  passOnStoreError: true,
   message: { error: 'Too many requests. Please try again later.' },
 })
 
@@ -61,6 +62,7 @@ const strictLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: makeStore('strict'),
+  passOnStoreError: true,
   message: { error: 'Rate limit reached for this endpoint. Please wait before trying again.' },
 })
 
@@ -71,6 +73,7 @@ const awsConnectLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: makeStore('aws-connect'),
+  passOnStoreError: true,
   message: { error: 'Too many AWS connection attempts.' },
 })
 
@@ -81,6 +84,7 @@ const destructiveLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: makeStore('destructive'),
+  passOnStoreError: true,
   message: { error: 'Too many requests on this endpoint.' },
 })
 
@@ -91,6 +95,7 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   store: makeStore('auth'),
+  passOnStoreError: true,
   message: { error: 'Too many attempts. Please try again in 15 minutes.' },
 })
 
