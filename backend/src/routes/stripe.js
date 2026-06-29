@@ -5,7 +5,11 @@ import { requireAuth } from '../middleware/auth.js'
 import { sendWelcomeEmail, sendPaymentConfirmationEmail, sendCancellationEmail } from '../services/emailService.js'
 
 const router = Router()
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
+
+if (!process.env.STRIPE_SECRET_KEY) {
+  console.error('[Stripe] STRIPE_SECRET_KEY is not set — Stripe routes will return 503')
+}
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -20,6 +24,10 @@ const TIER_RATES = { standard: 0.20, team: 0.15 }
 //   customer.subscription.deleted
 //   customer.subscription.updated
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!stripe) {
+    return res.status(503).json({ error: 'Payment service not configured.' })
+  }
+
   const sig = req.headers['stripe-signature']
 
   let event
@@ -174,18 +182,43 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 router.use(requireAuth)
 
 // POST /api/stripe/create-checkout
-router.post('/create-checkout', async (req, res, next) => {
-  try {
-    const { tier } = req.body
+router.post('/create-checkout', async (req, res) => {
+  if (!stripe) {
+    return res.status(503).json({ error: 'Payment service is not configured. Please contact support.' })
+  }
 
-    if (!tier || !TIER_RATES[tier]) {
-      return res.status(400).json({ error: 'A valid tier (standard or team) is required.' })
+  const { tier } = req.body
+
+  if (!tier || !TIER_RATES[tier]) {
+    return res.status(400).json({ error: 'A valid tier (standard or team) is required.' })
+  }
+
+  // Check for an existing active subscription before creating a new checkout
+  try {
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('plan, subscription_status, stripe_customer_id')
+      .eq('id', req.user.id)
+      .single()
+
+    if (profileError) {
+      console.error('[Stripe] Profile lookup error:', profileError.message)
+      return res.status(502).json({ error: 'Unable to verify account status. Please try again.' })
     }
 
-    const rate = TIER_RATES[tier]
-    const percentage = rate * 100
-    const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1)
+    if (profile?.subscription_status === 'active' && profile?.plan !== 'free' && profile?.plan) {
+      return res.status(409).json({ error: 'You already have an active subscription.' })
+    }
+  } catch (err) {
+    console.error('[Stripe] Profile check failed:', err.message)
+    return res.status(502).json({ error: 'Unable to verify account status. Please try again.' })
+  }
 
+  const rate = TIER_RATES[tier]
+  const percentage = rate * 100
+  const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1)
+
+  try {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       line_items: [
@@ -213,8 +246,14 @@ router.post('/create-checkout', async (req, res, next) => {
 
     res.json({ url: session.url })
   } catch (err) {
-    console.error('[Stripe] create-checkout error:', err.message)
-    next(err)
+    console.error('[Stripe] create-checkout error:', err.type, err.message)
+    if (err.type === 'StripeAuthenticationError') {
+      return res.status(503).json({ error: 'Payment service temporarily unavailable. Please try again later.' })
+    }
+    if (err.type === 'StripeInvalidRequestError') {
+      return res.status(400).json({ error: 'Invalid checkout configuration. Please contact support.' })
+    }
+    return res.status(502).json({ error: 'Unable to create checkout session. Please try again.' })
   }
 })
 
