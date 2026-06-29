@@ -1,6 +1,8 @@
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
+import { rateLimit } from 'express-rate-limit'
 
 import healthRouter from './routes/health.js'
 import auditRouter from './routes/audit.js'
@@ -13,12 +15,29 @@ import { startCronJobs } from './services/cronJobs.js'
 const app = express()
 const PORT = process.env.PORT || 3001
 
+// Fix 1 — remove X-Powered-By header
+app.disable('x-powered-by')
+
+// Fix 2 — Helmet security headers
+app.use(helmet())
+
 app.use(cors({
   origin: process.env.NODE_ENV === 'production'
     ? 'https://vaultixai.app'
     : 'http://localhost:5173',
   credentials: true
 }))
+
+// Fix 4 — Global rate limiter covering all routes
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests. Please try again later.' },
+})
+
+app.use(globalLimiter)
 
 // Skip express.json() for the Stripe webhook — it needs the raw body for signature verification
 app.use((req, res, next) => {

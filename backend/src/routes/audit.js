@@ -16,8 +16,7 @@ const supabase = createClient(
 const auditLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 5,
-  keyGenerator: (req) => req.user?.id || req.socket.remoteAddress,
-  skip: (req) => !!req.user?.id,
+  keyGenerator: (req) => req.user?.id || req.ip,
   message: { error: 'Too many audit requests. Please wait before running another audit.' },
   standardHeaders: true,
   legacyHeaders: false,
