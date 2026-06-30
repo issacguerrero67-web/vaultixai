@@ -204,6 +204,13 @@ export default function Billing() {
     return () => clearInterval(poll)
   }, [paymentSuccess])
 
+  // Auto-redirect after payment confirmation
+  useEffect(() => {
+    if (!paymentSuccess || !profile?.audit_unlocked) return
+    const t = setTimeout(() => navigate('/dashboard/reports'), 4000)
+    return () => clearTimeout(t)
+  }, [paymentSuccess, profile?.audit_unlocked, navigate])
+
   async function startPayment() {
     setPaymentIntentError('')
     setInitiatingPayment(true)
@@ -397,13 +404,6 @@ export default function Billing() {
   if (loading) return shell(
     <div style={{ color: '#6b7280', fontSize: 14 }}>Loading…</div>
   )
-
-  // Auto-redirect after payment confirmation
-  useEffect(() => {
-    if (!paymentSuccess || !profile?.audit_unlocked) return
-    const t = setTimeout(() => navigate('/dashboard/reports'), 4000)
-    return () => clearTimeout(t)
-  }, [paymentSuccess, profile?.audit_unlocked, navigate])
 
   // ── STATE: PAYMENT SUCCESS (redirect back from Stripe) ────────────────────
   if (paymentSuccess) {
