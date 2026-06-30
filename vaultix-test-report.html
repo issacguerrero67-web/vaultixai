@@ -22,7 +22,7 @@
         <div style="font-size:13px;color:#6b7280;">Production Test Report</div>
       </div>
       <div style="margin-left:auto;text-align:right;">
-        <div style="font-size:12px;color:#6b7280;">Monday, June 29, 2026 at 12:54 AM EDT</div>
+        <div style="font-size:12px;color:#6b7280;">Monday, June 29, 2026 at 02:26 AM EDT</div>
         <a href="https://vaultixai.app" style="font-size:12px;">vaultixai.app</a>
       </div>
     </div>
@@ -32,7 +32,7 @@
     <!-- Score card -->
     <div style="display:grid;grid-template-columns:auto 1fr;gap:32px;background:#1a1a18;border:1px solid #2a2a28;border-radius:12px;padding:32px;margin-bottom:32px;align-items:center;">
       <div style="text-align:center;">
-        <div style="font-size:80px;font-weight:800;color:#22c55e;line-height:1;">90</div>
+        <div style="font-size:80px;font-weight:800;color:#22c55e;line-height:1;">92</div>
         <div style="font-size:14px;color:#6b7280;margin-top:4px;">/ 100</div>
         <div style="margin-top:12px;background:#22c55e22;border:1px solid #22c55e44;border-radius:20px;padding:4px 16px;display:inline-block;">
           <span style="color:#22c55e;font-size:13px;font-weight:600;">Production Ready</span>
@@ -42,7 +42,7 @@
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;">
           
             <div style="background:#111110;border:1px solid #2a2a28;border-radius:8px;padding:16px;text-align:center;">
-              <div style="font-size:28px;font-weight:700;color:#9ca3af;">49</div>
+              <div style="font-size:28px;font-weight:700;color:#9ca3af;">48</div>
               <div style="font-size:12px;color:#6b7280;margin-top:4px;">Total Tests</div>
             </div>
             <div style="background:#111110;border:1px solid #2a2a28;border-radius:8px;padding:16px;text-align:center;">
@@ -50,7 +50,7 @@
               <div style="font-size:12px;color:#6b7280;margin-top:4px;">Passed</div>
             </div>
             <div style="background:#111110;border:1px solid #2a2a28;border-radius:8px;padding:16px;text-align:center;">
-              <div style="font-size:28px;font-weight:700;color:#ef4444;">5</div>
+              <div style="font-size:28px;font-weight:700;color:#ef4444;">4</div>
               <div style="font-size:12px;color:#6b7280;margin-top:4px;">Failed</div>
             </div>
             <div style="background:#111110;border:1px solid #2a2a28;border-radius:8px;padding:16px;text-align:center;">
@@ -67,7 +67,7 @@
             Test Account: aws@vaultixai.app<br>
             Auth: ✗ No token (check TEST_PASSWORD)<br>
             Slow threshold: 3000ms<br>
-            Supabase: Not configured
+            Supabase: https://jzybjanzymjatghemeya.supabase.co
           </div>
         </div>
       </div>
@@ -78,14 +78,14 @@
     <div style="background:#1a1a18;border:1px solid #2a2a28;border-radius:12px;padding:24px;margin-bottom:32px;">
       <h2 style="font-size:16px;font-weight:600;margin-bottom:16px;color:#F5F4F0;">Issues Found</h2>
       
-      <ul style="list-style:none;"><li style="color:#f59e0b;margin-bottom:6px;font-size:14px;">🟡 <strong>Auth</strong> — Auth tests skipped — missing SUPABASE_URL or SUPABASE_ANON_KEY</li><li style="color:#f59e0b;margin-bottom:6px;font-size:14px;">🟡 <strong>Rate Limiting</strong> — Global limiter fires 429 after 100 requests/15min</li><li style="color:#f59e0b;margin-bottom:6px;font-size:14px;">🟡 <strong>Rate Limiting</strong> — 429 response body has { error } field</li><li style="color:#f59e0b;margin-bottom:6px;font-size:14px;">🟡 <strong>Rate Limiting / Methods</strong> — GET /api/stripe/webhook → 404 (POST only)</li><li style="color:#f59e0b;margin-bottom:6px;font-size:14px;">🟡 <strong>Business Logic</strong> — All business logic tests skipped — no auth token</li></ul>
+      <ul style="list-style:none;"><li style="color:#f59e0b;margin-bottom:6px;font-size:14px;">🟡 <strong>Auth</strong> — Auth tests skipped — missing SUPABASE_URL or SUPABASE_ANON_KEY</li><li style="color:#f59e0b;margin-bottom:6px;font-size:14px;">🟡 <strong>Rate Limiting</strong> — Rate-limit headers present on responses</li><li style="color:#f59e0b;margin-bottom:6px;font-size:14px;">🟡 <strong>Rate Limiting</strong> — Global limiter fires 429 after 100 requests/15min</li><li style="color:#f59e0b;margin-bottom:6px;font-size:14px;">🟡 <strong>Business Logic</strong> — All business logic tests skipped — no auth token</li></ul>
     </div>
 
     <!-- Recommendations -->
     
     <div style="background:#2a1a0f;border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:20px 24px;margin-bottom:32px;">
       <h3 style="font-size:14px;font-weight:600;color:#f59e0b;margin-bottom:8px;">⚠ Configuration Missing</h3>
-      <p style="font-size:13px;color:#9ca3af;">Set these environment variables to run full test coverage: <code style="color:#f59e0b;">SUPABASE_URL, SUPABASE_ANON_KEY, TEST_PASSWORD</code></p>
+      <p style="font-size:13px;color:#9ca3af;">Set these environment variables to run full test coverage: <code style="color:#f59e0b;">SUPABASE_ANON_KEY, TEST_PASSWORD</code></p>
       <p style="font-size:12px;color:#6b7280;margin-top:8px;">Run: <code>TEST_PASSWORD=xxx SUPABASE_URL=https://xxx.supabase.co SUPABASE_ANON_KEY=xxx node vaultix-full-test.js</code></p>
     </div>
 
@@ -111,55 +111,55 @@
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">GET / (frontend) → 200</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=200</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">479ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">588ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">GET /health → 200 with status:ok</td>
-          <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=200 body={"status":"ok","timestamp":"2026-06-29T04:54:05.588Z"}</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">317ms</td>
+          <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=200 body={"status":"ok","timestamp":"2026-06-29T06:26:22.138Z"}</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">260ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">GET /api/audit/run → 404 or 405</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">220ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">201ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">GET /api/reports → 401</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">159ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">140ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">GET /api/aws-accounts → 401</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">154ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">140ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">GET /api/stripe/status → 401</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">134ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">156ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">GET /api/stripe/invoices → 401</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">126ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">137ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">POST /api/audit/run → 401</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">181ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">133ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">POST /api/autopilot/chat → 401</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">130ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">134ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
@@ -171,25 +171,25 @@
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">POST /api/keys/generate → 401</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">133ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">139ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">DELETE /api/account/aws-accounts → 401</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">126ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">130ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">POST /api/stripe/webhook without signature → 400</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=400</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">163ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">140ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">Unknown route → not 200</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=404</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">131ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">144ms</td>
         </tr></tbody>
         </table>
       </div>
@@ -235,50 +235,50 @@
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">SQL injection in roleArn → 400/401</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">139ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">137ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">XSS in roleArn → 400/401</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">146ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">131ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">Valid ARN format accepted → not 400 (may be 401/403)</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">132ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">156ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">Body > 10kb limit → 413/400</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=413</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">306ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">138ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">Null required field (aws_account_id) → 400/401</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">126ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">129ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">Numeric string as UUID → 400/401</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">124ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">143ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">Missing body entirely → 400/401</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">125ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">136ms</td>
         </tr></tbody>
         </table>
       </div>
       <div style="margin-bottom:32px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
           <h2 style="margin:0;font-size:16px;font-weight:600;color:#F5F4F0;">Rate Limiting</h2>
-          <span style="font-size:13px;color:#6b7280;">1/3 passed</span>
+          <span style="font-size:13px;color:#6b7280;">0/2 passed</span>
         </div>
         <table style="width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden;border:1px solid #2a2a28;">
           <thead>
@@ -290,22 +290,16 @@
             </tr>
           </thead>
           <tbody>
-        <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
-          <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
+        <tr style="background:#2a1f0f;border-bottom:1px solid #1a1a18;">
+          <td style="padding:8px 12px;text-align:center;font-size:16px;color:#f59e0b;">✗</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">Rate-limit headers present on responses</td>
-          <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">ratelimit-limit=100 ratelimit-remaining=98</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">125ms</td>
+          <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">ratelimit-limit=null ratelimit-remaining=null</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">139ms</td>
         </tr>
         <tr style="background:#2a1f0f;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#f59e0b;">✗</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">Global limiter fires 429 after 100 requests/15min</td>
-          <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">110/110 succeeded, 429=0</td>
-          <td></td>
-        </tr>
-        <tr style="background:#2a1f0f;border-bottom:1px solid #1a1a18;">
-          <td style="padding:8px 12px;text-align:center;font-size:16px;color:#f59e0b;">✗</td>
-          <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">429 response body has { error } field</td>
-          <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">body=undefined</td>
+          <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">110/110 succeeded, 429=0 — if 0 check multi-instance Railway deployment</td>
           <td></td>
         </tr></tbody>
         </table>
@@ -313,7 +307,7 @@
       <div style="margin-bottom:32px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
           <h2 style="margin:0;font-size:16px;font-weight:600;color:#F5F4F0;">Rate Limiting / Methods</h2>
-          <span style="font-size:13px;color:#6b7280;">0/1 passed</span>
+          <span style="font-size:13px;color:#6b7280;">1/1 passed</span>
         </div>
         <table style="width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden;border:1px solid #2a2a28;">
           <thead>
@@ -325,9 +319,9 @@
             </tr>
           </thead>
           <tbody>
-        <tr style="background:#2a1f0f;border-bottom:1px solid #1a1a18;">
-          <td style="padding:8px 12px;text-align:center;font-size:16px;color:#f59e0b;">✗</td>
-          <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">GET /api/stripe/webhook → 404 (POST only)</td>
+        <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
+          <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
+          <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">GET /api/stripe/webhook → not 200 (POST only endpoint)</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
           <td></td>
         </tr></tbody>
@@ -351,19 +345,19 @@
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">10x GET /health</td>
-          <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">statuses={"200":10} avg=131ms min=121ms max=140ms slow(>3000ms)=0 wall=141ms</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">131ms</td>
+          <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">statuses={"200":10} avg=146ms min=145ms max=150ms slow(>3000ms)=0 wall=151ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">146ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">10x GET /api/reports (401 expected)</td>
-          <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">statuses={"401":10} avg=126ms min=121ms max=130ms slow(>3000ms)=0 wall=130ms</td>
+          <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">statuses={"401":10} avg=126ms min=123ms max=133ms slow(>3000ms)=0 wall=133ms</td>
           <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">126ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">50x GET /health (ramp test)</td>
-          <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">statuses={"200":50} avg=142ms min=125ms max=204ms slow(>3000ms)=0 wall=208ms</td>
+          <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">statuses={"200":50} avg=142ms min=125ms max=182ms slow(>3000ms)=0 wall=186ms</td>
           <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">142ms</td>
         </tr></tbody>
         </table>
@@ -387,31 +381,31 @@
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">Webhook without stripe-signature → 400</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=400</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">125ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">142ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">Webhook with fake stripe-signature → 400</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=400</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">128ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">125ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">GET /api/stripe/webhook → not 200</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">135ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">127ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">PUT /api/stripe/webhook → not 200</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">124ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">123ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">GET /api/stripe/status without auth → 401</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=401</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">123ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">129ms</td>
         </tr></tbody>
         </table>
       </div>
@@ -457,13 +451,13 @@
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">Request from random origin is blocked</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=500 error=none</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">124ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">126ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">Request from vaultixai.app origin is allowed → 200</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=200</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">126ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">124ms</td>
         </tr></tbody>
         </table>
       </div>
@@ -510,7 +504,7 @@
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">Frontend serves 200 with content</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=200</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">355ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">366ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
@@ -563,7 +557,7 @@
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
           <td style="padding:8px 12px;color:#F5F4F0;font-size:13px;">404 route returns JSON or handled response</td>
           <td style="padding:8px 12px;color:#6b7280;font-size:12px;font-family:monospace;">status=404</td>
-          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">143ms</td>
+          <td style="color:#6b7280;font-size:12px;padding:8px 12px;text-align:right;white-space:nowrap;">132ms</td>
         </tr>
         <tr style="background:#0f2a1a;border-bottom:1px solid #1a1a18;">
           <td style="padding:8px 12px;text-align:center;font-size:16px;color:#22c55e;">✓</td>
@@ -576,7 +570,7 @@
 
     <!-- Footer -->
     <div style="border-top:1px solid #2a2a28;padding-top:24px;text-align:center;">
-      <p style="font-size:12px;color:#444;">Generated by Vaultix AI Test Suite · Monday, June 29, 2026 at 12:54 AM EDT</p>
+      <p style="font-size:12px;color:#444;">Generated by Vaultix AI Test Suite · Monday, June 29, 2026 at 02:26 AM EDT</p>
       <p style="font-size:12px;color:#333;margin-top:4px;">vaultixai.app · hello@vaultixai.app</p>
     </div>
 

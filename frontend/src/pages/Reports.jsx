@@ -72,6 +72,8 @@ export default function Reports() {
   const [pastReports, setPastReports] = useState([])
   const [selectedReportId, setSelectedReportId] = useState(null)
   const { isPaid } = useUserPlan()
+  const [auditUnlocked, setAuditUnlocked] = useState(false)
+  const [savingsFoundAmt, setSavingsFoundAmt] = useState(0)
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768)
@@ -88,7 +90,7 @@ export default function Reports() {
 
       const [{ data: allAccounts }, { data: profile }] = await Promise.all([
         supabase.from('aws_accounts').select('id, account_name').eq('user_id', session.user.id),
-        supabase.from('profiles').select('full_name').eq('id', session.user.id).single(),
+        supabase.from('profiles').select('full_name, audit_unlocked, savings_found').eq('id', session.user.id).single(),
       ])
 
       setAccounts(allAccounts ?? [])
@@ -118,6 +120,8 @@ export default function Reports() {
       }
 
       if (profile?.full_name) setDisplayName(profile.full_name)
+      setAuditUnlocked(profile?.audit_unlocked ?? false)
+      setSavingsFoundAmt(profile?.savings_found ?? 0)
       setLoading(false)
     }
     init()
@@ -351,18 +355,38 @@ export default function Reports() {
 
         <div style={{ padding: isMobile ? '16px 16px 70px' : 32, flex: 1 }}>
 
-          {paymentSuccess && (
+          {paymentSuccess && auditUnlocked && (
             <div style={{
               background: 'rgba(34,197,94,0.1)',
               border: '1px solid rgba(34,197,94,0.3)',
-              borderRadius: 8,
-              padding: '16px 20px',
-              marginBottom: 24,
-              color: '#22C55E',
-              fontSize: 14,
-              fontWeight: 500,
+              borderRadius: 8, padding: '16px 20px', marginBottom: 24,
+              color: '#22C55E', fontSize: 14, fontWeight: 500,
             }}>
-              🎉 Payment successful! Your Vaultix AI plan is now active.
+              🎉 Full audit unlocked! Your findings are now fully visible.
+            </div>
+          )}
+
+          {/* Unlock banner for free users with findings */}
+          {!auditUnlocked && report && (report.total_savings || 0) > 0 && (
+            <div style={{
+              background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)',
+              borderRadius: 8, padding: '16px 20px', marginBottom: 24,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
+            }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#F5F4F0', marginBottom: 4 }}>
+                  🔒 Dollar amounts and resource IDs are hidden
+                </div>
+                <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                  Unlock your full audit to see exact savings, ARNs, and fix instructions.
+                </div>
+              </div>
+              <Link
+                to="/dashboard/billing"
+                style={{ background: '#3B82F6', color: 'white', textDecoration: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}
+              >
+                Unlock Full Audit →
+              </Link>
             </div>
           )}
 
@@ -469,14 +493,16 @@ export default function Reports() {
                     expanded={!!expandedFindings[finding.id]}
                     onToggle={() => setExpandedFindings(prev => ({ ...prev, [finding.id]: !prev[finding.id] }))}
                     isMobile={isMobile}
+                    gated={!auditUnlocked}
                   />
                 ))}
               </div>
 
               {/* ── REPORT HISTORY ── */}
               <FeatureGate
-                isPaid={isPaid}
-                message="Upgrade to view your full report history"
+                isPaid={auditUnlocked}
+                savingsFound={savingsFoundAmt}
+                message="Unlock your audit to view report history"
                 style={{ marginTop: 32, borderRadius: 8 }}
               >
                 <div style={{ marginTop: 32, background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8, overflow: 'hidden' }}>
@@ -591,7 +617,7 @@ export default function Reports() {
   )
 }
 
-function FindingCard({ finding, expanded, onToggle, isMobile }) {
+function FindingCard({ finding, expanded, onToggle, isMobile, gated = false }) {
   const sev = finding.severity || 'low'
   const color = SEV_COLOR[sev] || '#6B7280'
   const bg = SEV_BG[sev] || 'rgba(107,114,128,0.1)'
@@ -638,11 +664,18 @@ function FindingCard({ finding, expanded, onToggle, isMobile }) {
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-          {finding.estimatedMonthlySavings > 0 && (
+          {gated ? (
+            <span
+              title="Unlock full audit to see exact savings"
+              style={{ fontSize: 13, fontWeight: 600, color: '#34D399', filter: 'blur(5px)', userSelect: 'none', cursor: 'help' }}
+            >
+              $999/mo
+            </span>
+          ) : finding.estimatedMonthlySavings > 0 ? (
             <span style={{ fontSize: 13, fontWeight: 600, color: '#34D399' }}>
               ${finding.estimatedMonthlySavings.toLocaleString()}/mo
             </span>
-          )}
+          ) : null}
           <span style={{ fontSize: 12, color: '#6b7280', cursor: 'pointer', whiteSpace: 'nowrap' }}>
             {expanded ? 'Close ↑' : 'Details ↓'}
           </span>
@@ -650,14 +683,19 @@ function FindingCard({ finding, expanded, onToggle, isMobile }) {
       </div>
 
       {/* Collapsed preview */}
-      {!expanded && descPreview && (
+      {!expanded && descPreview && !gated && (
         <p style={{ fontSize: 13, color: '#666662', lineHeight: 1.5, margin: '10px 0 0' }}>
           {descPreview}
         </p>
       )}
+      {!expanded && gated && (
+        <p style={{ fontSize: 13, color: '#444', lineHeight: 1.5, margin: '10px 0 0', fontStyle: 'italic' }}>
+          🔒 Unlock full audit to see description, fix steps, and resource IDs
+        </p>
+      )}
 
       {/* Expanded content */}
-      {expanded && (
+      {expanded && !gated && (
         <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #2a2a28' }} onClick={e => e.stopPropagation()}>
           {finding.description && (
             <p style={{ color: '#9ca3af', fontSize: 14, lineHeight: 1.6, marginBottom: 16, margin: '0 0 16px' }}>
@@ -672,6 +710,19 @@ function FindingCard({ finding, expanded, onToggle, isMobile }) {
               {formatRecommendation(finding.recommendation)}
             </>
           )}
+        </div>
+      )}
+      {expanded && gated && (
+        <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #2a2a28', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+          <p style={{ fontSize: 14, color: '#6b7280', margin: '0 0 12px' }}>
+            Full details are locked. Unlock your audit to see exact amounts, resource IDs, and step-by-step fix instructions.
+          </p>
+          <a
+            href="/dashboard/billing"
+            style={{ color: '#3B82F6', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}
+          >
+            Unlock Full Audit →
+          </a>
         </div>
       )}
     </div>

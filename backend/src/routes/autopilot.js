@@ -252,9 +252,13 @@ router.post('/chat', async (req, res) => {
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('full_name, plan')
+      .select('full_name, plan, audit_unlocked')
       .eq('id', userId)
       .single()
+
+    if (!profile?.audit_unlocked) {
+      return res.status(403).json({ error: 'Autopilot requires an unlocked audit. Complete payment to access AI chat.' })
+    }
 
     const { data: account } = await supabase
       .from('aws_accounts')

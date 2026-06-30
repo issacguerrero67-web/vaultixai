@@ -2,7 +2,7 @@ import express, { Router } from 'express'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { requireAuth } from '../middleware/auth.js'
-import { sendWelcomeEmail, sendPaymentConfirmationEmail, sendCancellationEmail } from '../services/emailService.js'
+import { sendPaymentConfirmationEmail } from '../services/emailService.js'
 
 const router = Router()
 
@@ -16,13 +16,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 )
 
-const TIER_RATES = { standard: 0.20, team: 0.15 }
-
 // POST /api/stripe/webhook — raw body, no auth
-// NOTE: Stripe dashboard webhook must have these events enabled:
-//   checkout.session.completed
-//   customer.subscription.deleted
-//   customer.subscription.updated
+// Stripe dashboard must have these events enabled:
+//   payment_intent.succeeded
+//   payment_intent.payment_failed
 router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   if (!stripe) {
     return res.status(503).json({ error: 'Payment service not configured.' })
@@ -38,13 +35,17 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     return res.status(400).send('Webhook signature verification failed')
   }
 
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object
+  if (event.type === 'payment_intent.succeeded') {
+    const intent = event.data.object
+    const { user_id, audit_id, savings_found, plan_type } = intent.metadata || {}
 
-    const { userId, tier } = session.metadata
+    if (!user_id) {
+      console.error('[Stripe] payment_intent.succeeded missing user_id in metadata:', intent.id)
+      return res.json({ received: true })
+    }
 
     try {
-      // Idempotency check — skip if this event was already processed
+      // Idempotency check
       const { data: existingEvent } = await supabase
         .from('processed_stripe_events')
         .select('id')
@@ -55,125 +56,54 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
         return res.json({ received: true })
       }
 
+      const feePaid = intent.amount / 100
+      const savingsAmount = parseFloat(savings_found) || 0
+
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
-          plan: tier,
-          stripe_customer_id: session.customer,
-          subscription_status: 'active',
+          audit_unlocked: true,
+          paid_at: new Date().toISOString(),
+          savings_found: savingsAmount,
+          fee_paid: feePaid,
+          plan_type: plan_type || 'standard',
         })
-        .eq('id', userId)
+        .eq('id', user_id)
 
       if (updateError) {
         console.error('[Stripe] Profile update failed:', updateError.message)
       }
 
-      // Mark event as processed
       await supabase
         .from('processed_stripe_events')
         .insert({ event_id: event.id, processed_at: new Date().toISOString() })
 
-      console.log('[Stripe] Subscription activated for user:', userId)
+      console.log('[Stripe] Audit unlocked for user:', user_id, '— fee:', feePaid, '— savings:', savingsAmount)
 
-      // Send welcome + payment confirmation emails
+      // Send payment confirmation email
       try {
         const { data: profile } = await supabase
           .from('profiles')
           .select('full_name')
-          .eq('id', userId)
+          .eq('id', user_id)
           .single()
 
-        const userEmail = session.customer_email || session.customer_details?.email
-        const fullName = profile?.full_name || null
-        const savingsRate = tier === 'team' ? 15 : 20
-
-        await sendWelcomeEmail(userEmail, fullName, tier)
-        await sendPaymentConfirmationEmail(userEmail, fullName, tier, savingsRate)
+        const userEmail = intent.receipt_email
+        if (userEmail) {
+          const savingsRate = plan_type === 'team' ? 15 : 20
+          await sendPaymentConfirmationEmail(userEmail, profile?.full_name || null, plan_type || 'standard', savingsRate)
+        }
       } catch (emailErr) {
-        console.error('[Stripe] Failed to send post-checkout emails:', emailErr.message)
+        console.error('[Stripe] Failed to send payment confirmation email:', emailErr.message)
       }
     } catch (err) {
-      console.error('[Stripe] Failed to update profile after payment:', err.message)
+      console.error('[Stripe] Failed to process payment_intent.succeeded:', err.message)
     }
   }
 
-  if (event.type === 'customer.subscription.deleted') {
-    const subscription = event.data.object
-    const customerId = subscription.customer
-
-    console.log('[Stripe] customer.subscription.deleted for customer:', customerId)
-
-    try {
-      const { data: profile, error: lookupError } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .eq('stripe_customer_id', customerId)
-        .single()
-
-      if (lookupError || !profile) {
-        console.error('[Stripe] Could not find profile for customer:', customerId, lookupError?.message)
-      } else {
-        await supabase
-          .from('profiles')
-          .update({ plan: 'free', subscription_status: 'cancelled' })
-          .eq('id', profile.id)
-
-        console.log('[Stripe] Subscription cancelled — downgraded user:', profile.id)
-
-        try {
-          const customer = await stripe.customers.retrieve(customerId)
-          const userEmail = customer.email
-          await sendCancellationEmail(userEmail, profile.full_name)
-        } catch (emailErr) {
-          console.error('[Stripe] Failed to send cancellation email:', emailErr.message)
-        }
-      }
-    } catch (err) {
-      console.error('[Stripe] Failed to handle subscription.deleted:', err.message)
-    }
-  }
-
-  if (event.type === 'customer.subscription.updated') {
-    const subscription = event.data.object
-    const customerId = subscription.customer
-    const status = subscription.status
-
-    console.log('[Stripe] customer.subscription.updated — customer:', customerId, 'status:', status)
-
-    try {
-      const { data: profile, error: lookupError } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .eq('stripe_customer_id', customerId)
-        .single()
-
-      if (lookupError || !profile) {
-        console.error('[Stripe] Could not find profile for customer:', customerId, lookupError?.message)
-      } else if (status === 'canceled' || status === 'unpaid') {
-        await supabase
-          .from('profiles')
-          .update({ plan: 'free', subscription_status: 'cancelled' })
-          .eq('id', profile.id)
-
-        console.log('[Stripe] Subscription updated to cancelled/unpaid — downgraded user:', profile.id)
-
-        try {
-          const customer = await stripe.customers.retrieve(customerId)
-          await sendCancellationEmail(customer.email, profile.full_name)
-        } catch (emailErr) {
-          console.error('[Stripe] Failed to send cancellation email:', emailErr.message)
-        }
-      } else if (status === 'active') {
-        await supabase
-          .from('profiles')
-          .update({ subscription_status: 'active' })
-          .eq('id', profile.id)
-
-        console.log('[Stripe] Subscription reactivated for user:', profile.id)
-      }
-    } catch (err) {
-      console.error('[Stripe] Failed to handle subscription.updated:', err.message)
-    }
+  if (event.type === 'payment_intent.payment_failed') {
+    const intent = event.data.object
+    console.error('[Stripe] Payment failed:', intent.id, intent.last_payment_error?.message)
   }
 
   res.json({ received: true })
@@ -181,145 +111,169 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
 
 router.use(requireAuth)
 
-// POST /api/stripe/create-checkout
-router.post('/create-checkout', async (req, res) => {
+// POST /api/stripe/create-payment-intent
+router.post('/create-payment-intent', async (req, res) => {
   if (!stripe) {
     return res.status(503).json({ error: 'Payment service is not configured. Please contact support.' })
   }
 
-  const { tier } = req.body
+  const userId = req.user.id
+  const { audit_id, plan_type: requestedPlanType } = req.body
 
-  if (!tier || !TIER_RATES[tier]) {
-    return res.status(400).json({ error: 'A valid tier (standard or team) is required.' })
-  }
-
-  // Check for an existing active subscription before creating a new checkout
+  // Load profile
+  let profile
   try {
-    const { data: profile, error: profileError } = await supabase
+    const { data, error } = await supabase
       .from('profiles')
-      .select('plan, subscription_status, stripe_customer_id')
-      .eq('id', req.user.id)
+      .select('plan_type, audit_unlocked, paid_at')
+      .eq('id', userId)
       .single()
 
-    if (profileError) {
-      console.error('[Stripe] Profile lookup error:', profileError.message)
-      return res.status(502).json({ error: 'Unable to verify account status. Please try again.' })
+    if (error) {
+      console.error('[Stripe] Profile lookup failed:', error.message)
+      return res.status(502).json({ error: 'Unable to load account. Please try again.' })
     }
-
-    if (profile?.subscription_status === 'active' && profile?.plan !== 'free' && profile?.plan) {
-      return res.status(409).json({ error: 'You already have an active subscription.' })
-    }
+    profile = data
   } catch (err) {
-    console.error('[Stripe] Profile check failed:', err.message)
-    return res.status(502).json({ error: 'Unable to verify account status. Please try again.' })
+    console.error('[Stripe] Profile check error:', err.message)
+    return res.status(502).json({ error: 'Unable to load account. Please try again.' })
   }
 
-  const rate = TIER_RATES[tier]
-  const percentage = rate * 100
-  const tierLabel = tier.charAt(0).toUpperCase() + tier.slice(1)
+  // Load the audit report
+  let report
+  try {
+    if (audit_id) {
+      const { data } = await supabase
+        .from('audit_reports')
+        .select('id, total_savings, aws_account_id')
+        .eq('id', audit_id)
+        .eq('user_id', userId)
+        .single()
+      report = data
+    } else {
+      const { data } = await supabase
+        .from('audit_reports')
+        .select('id, total_savings, aws_account_id')
+        .eq('user_id', userId)
+        .eq('status', 'complete')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      report = data
+    }
+  } catch (err) {
+    console.error('[Stripe] Audit report fetch error:', err.message)
+    return res.status(502).json({ error: 'Unable to load audit data. Please try again.' })
+  }
+
+  if (!report) {
+    return res.status(404).json({ error: 'No completed audit found. Run an audit first.' })
+  }
+
+  const totalSavings = report.total_savings || 0
+
+  // No waste found — no charge
+  if (totalSavings === 0) {
+    return res.json({ amount: 0, message: 'no_waste_found', savings_found: 0 })
+  }
+
+  const planType = requestedPlanType || profile?.plan_type || 'standard'
+  const rate = planType === 'team' ? 0.15 : 0.20
+  let fee = totalSavings * rate
+  if (fee < 19) fee = 19
+  const amountCents = Math.round(fee * 100)
 
   try {
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: 'usd',
-            recurring: { interval: 'month' },
-            unit_amount: 0,
-            product_data: {
-              name: `Vaultix AI - ${tierLabel} Plan`,
-              description: `Cloud cost optimization — ${percentage}% of verified monthly savings`,
-            },
-          },
-        },
-      ],
-      success_url: `${process.env.FRONTEND_URL}/dashboard/reports?payment=success`,
-      cancel_url: `${process.env.FRONTEND_URL}/dashboard/reports?payment=cancelled`,
-      customer_email: req.user.email,
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amountCents,
+      currency: 'usd',
+      receipt_email: req.user.email,
+      description: `Vaultix AI — AWS Cost Audit unlock ($${totalSavings.toLocaleString()} savings found, ${planType} rate)`,
       metadata: {
-        userId: req.user.id,
-        tier,
+        user_id: userId,
+        audit_id: report.id,
+        savings_found: String(totalSavings),
+        plan_type: planType,
       },
     })
 
-    res.json({ url: session.url })
+    res.json({
+      client_secret: paymentIntent.client_secret,
+      payment_intent_id: paymentIntent.id,
+      amount: fee,
+      amount_cents: amountCents,
+      savings_found: totalSavings,
+      rate,
+      plan_type: planType,
+    })
   } catch (err) {
-    console.error('[Stripe] create-checkout error:', err.type, err.message)
+    console.error('[Stripe] create-payment-intent error:', err.type, err.message)
     if (err.type === 'StripeAuthenticationError') {
       return res.status(503).json({ error: 'Payment service temporarily unavailable. Please try again later.' })
     }
     if (err.type === 'StripeInvalidRequestError') {
-      return res.status(400).json({ error: 'Invalid checkout configuration. Please contact support.' })
+      return res.status(400).json({ error: 'Invalid payment configuration. Please contact support.' })
     }
-    return res.status(502).json({ error: 'Unable to create checkout session. Please try again.' })
+    return res.status(502).json({ error: 'Unable to create payment. Please try again.' })
   }
 })
 
-// GET /api/stripe/status
+// GET /api/stripe/status — returns audit unlock state and payment info
 router.get('/status', async (req, res) => {
   try {
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('audit_unlocked, savings_found, fee_paid, paid_at, plan_type, plan')
       .eq('id', req.user.id)
       .single()
 
     if (error && error.code !== 'PGRST116') {
       console.error('[Stripe] Profile fetch error:', error.message)
-      return res.json({ tier: null, subscriptionStatus: null, stripeCustomerId: null })
+      return res.json({ audit_unlocked: false, savings_found: 0, fee_paid: 0, paid_at: null, plan_type: 'standard' })
     }
 
     return res.json({
-      tier: profile?.tier || profile?.plan || null,
-      subscriptionStatus: profile?.subscription_status || (profile?.stripe_customer_id ? 'active' : null),
-      stripeCustomerId: profile?.stripe_customer_id || null,
+      audit_unlocked: profile?.audit_unlocked ?? false,
+      savings_found: profile?.savings_found ?? 0,
+      fee_paid: profile?.fee_paid ?? 0,
+      paid_at: profile?.paid_at ?? null,
+      plan_type: profile?.plan_type ?? profile?.plan ?? 'standard',
     })
   } catch (err) {
     console.error('[Stripe] status error:', err.message)
-    return res.json({ tier: null, subscriptionStatus: null, stripeCustomerId: null })
+    return res.json({ audit_unlocked: false, savings_found: 0, fee_paid: 0, paid_at: null, plan_type: 'standard' })
   }
 })
 
-// GET /api/stripe/invoices
-router.get('/invoices', async (req, res) => {
+// GET /api/stripe/payment-history — list of payment intents for this user
+router.get('/payment-history', async (req, res) => {
   try {
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from('profiles')
-      .select('stripe_customer_id, plan')
+      .select('audit_unlocked, savings_found, fee_paid, paid_at, plan_type')
       .eq('id', req.user.id)
       .single()
 
-    if (!profile?.stripe_customer_id) {
-      return res.json({ invoices: [], hasSubscription: false })
+    if (error && error.code !== 'PGRST116') {
+      return res.json({ payments: [] })
     }
 
-    const invoices = await stripe.invoices.list({
-      customer: profile.stripe_customer_id,
-      limit: 24,
-      expand: ['data.subscription'],
-    })
-
-    let subscription = null
-    try {
-      const subs = await stripe.subscriptions.list({
-        customer: profile.stripe_customer_id,
-        status: 'active',
-        limit: 1,
+    const payments = []
+    if (profile?.audit_unlocked && profile?.paid_at) {
+      payments.push({
+        date: profile.paid_at,
+        description: 'AWS Cost Audit — full findings unlock',
+        amount: profile.fee_paid || 0,
+        savings_found: profile.savings_found || 0,
+        status: 'paid',
+        plan_type: profile.plan_type || 'standard',
       })
-      subscription = subs.data[0] || null
-    } catch (e) {}
+    }
 
-    res.json({
-      invoices: invoices.data,
-      subscription,
-      hasSubscription: !!subscription,
-      plan: profile.plan,
-    })
+    res.json({ payments })
   } catch (err) {
-    console.error('[Stripe] invoices error:', err.message)
-    res.status(500).json({ error: 'An internal error occurred. Please try again.' })
+    console.error('[Stripe] payment-history error:', err.message)
+    res.json({ payments: [] })
   }
 })
 
@@ -328,49 +282,40 @@ router.get('/savings-summary', async (req, res) => {
   try {
     const userId = req.user.id
 
-    const { data: reports } = await supabase
-      .from('audit_reports')
-      .select('total_savings, created_at, aws_account_id')
-      .eq('user_id', userId)
-      .eq('status', 'complete')
-      .order('created_at', { ascending: false })
-      .limit(12)
+    const [{ data: reports }, { data: profile }] = await Promise.all([
+      supabase
+        .from('audit_reports')
+        .select('total_savings, created_at, aws_account_id')
+        .eq('user_id', userId)
+        .eq('status', 'complete')
+        .order('created_at', { ascending: false })
+        .limit(12),
+      supabase
+        .from('profiles')
+        .select('plan_type, fee_paid, audit_unlocked')
+        .eq('id', userId)
+        .single(),
+    ])
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('stripe_customer_id, plan')
-      .eq('id', userId)
-      .single()
-
-    const totalSavingsFound = reports?.reduce((sum, r) => sum + (r.total_savings || 0), 0) || 0
     const latestSavings = reports?.[0]?.total_savings || 0
-    const rate = profile?.plan === 'team' ? 0.15 : 0.20
-    const latestFee = latestSavings * rate
+    const planType = profile?.plan_type || 'standard'
+    const rate = planType === 'team' ? 0.15 : 0.20
+    let latestFee = latestSavings * rate
+    if (latestSavings > 0 && latestFee < 19) latestFee = 19
     const netSavings = latestSavings - latestFee
     const roi = latestFee > 0 ? (latestSavings / latestFee).toFixed(1) : null
-
-    let totalPaid = 0
-    if (profile?.stripe_customer_id) {
-      try {
-        const invoices = await stripe.invoices.list({
-          customer: profile.stripe_customer_id,
-          status: 'paid',
-          limit: 100,
-        })
-        totalPaid = invoices.data.reduce((sum, inv) => sum + (inv.amount_paid || 0), 0) / 100
-      } catch (e) {}
-    }
 
     res.json({
       latestSavings,
       latestFee,
       netSavings,
       roi,
-      totalSavingsFound,
-      totalPaid,
+      totalSavingsFound: reports?.reduce((s, r) => s + (r.total_savings || 0), 0) || 0,
+      totalPaid: profile?.fee_paid || 0,
       rate,
-      plan: profile?.plan,
+      plan_type: planType,
       reportCount: reports?.length || 0,
+      audit_unlocked: profile?.audit_unlocked ?? false,
     })
   } catch (err) {
     console.error('[Stripe] savings-summary error:', err.message)

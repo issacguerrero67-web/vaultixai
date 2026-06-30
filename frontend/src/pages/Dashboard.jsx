@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import AccountSwitcher from '../components/AccountSwitcher'
-import { useUserPlan } from '../hooks/useUserPlan'
 
 const geistFontLink = document.createElement('link')
 geistFontLink.rel = 'stylesheet'
@@ -48,7 +47,7 @@ const SEVERITY_STYLES = {
 export default function Dashboard() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { isFree } = useUserPlan()
+  // useUserPlan not needed here; audit gating state is fetched with profile
 
   const [userEmail, setUserEmail] = useState('')
   const [displayName, setDisplayName] = useState('')
@@ -63,6 +62,8 @@ export default function Dashboard() {
   const [reportCount, setReportCount] = useState(0)
   const [latestReport, setLatestReport] = useState(null)
   const [hoveredRow, setHoveredRow] = useState(null)
+  const [auditUnlocked, setAuditUnlocked] = useState(false)
+  const [savingsFoundTotal, setSavingsFoundTotal] = useState(0)
   const [showWelcome, setShowWelcome] = useState(
     () => localStorage.getItem('vaultix_welcome_dismissed') !== 'true'
   )
@@ -83,7 +84,7 @@ export default function Dashboard() {
       const [accountsRes, reportsCountRes, profileRes] = await Promise.all([
         supabase.from('aws_accounts').select('id, account_name').eq('user_id', session.user.id),
         supabase.from('audit_reports').select('id', { count: 'exact', head: true }).eq('user_id', session.user.id),
-        supabase.from('profiles').select('full_name').eq('id', session.user.id).single(),
+        supabase.from('profiles').select('full_name, audit_unlocked, savings_found').eq('id', session.user.id).single(),
       ])
 
       const allAccounts = accountsRes.data ?? []
@@ -111,6 +112,9 @@ export default function Dashboard() {
 
       setReportCount(reportsCountRes.count ?? 0)
       if (profileRes.data?.full_name) setDisplayName(profileRes.data.full_name)
+      // Store audit unlock state on component for gating
+      setAuditUnlocked(profileRes.data?.audit_unlocked ?? false)
+      setSavingsFoundTotal(profileRes.data?.savings_found ?? 0)
       setLoading(false)
     }
     init()
@@ -202,7 +206,11 @@ export default function Dashboard() {
   const maxSavings = sortedCategories[0]?.[1] || 1
 
   // Dynamic stat card values
-  const totalSavings = latestReport ? '$' + (latestReport.total_savings || 0).toLocaleString() : '$0'
+  const totalSavings = latestReport
+    ? auditUnlocked
+      ? '$' + (latestReport.total_savings || 0).toLocaleString()
+      : '$$$$'
+    : '$0'
   const accountsConnected = awsConnected ? '1' : '0'
   const reportsGenerated = String(reportCount)
   const lastScan = latestReport ? formatAuditDate(latestReport.created_at) : 'Never'
@@ -491,6 +499,30 @@ export default function Dashboard() {
           {/* Data-driven content / empty state */}
           {findings.length > 0 ? (
             <>
+              {/* Unlock banner for free users */}
+              {!auditUnlocked && latestReport && (latestReport.total_savings || 0) > 0 && (
+                <div style={{
+                  background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)',
+                  borderRadius: 8, padding: '16px 20px', marginTop: 24,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
+                }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#F5F4F0', marginBottom: 4 }}>
+                      🔒 {findings.length} finding{findings.length !== 1 ? 's' : ''} waiting — amounts hidden
+                    </div>
+                    <div style={{ fontSize: 13, color: '#9ca3af' }}>
+                      We found savings in your account. Unlock to see exact amounts and fix instructions.
+                    </div>
+                  </div>
+                  <Link
+                    to="/dashboard/billing"
+                    style={{ background: '#3B82F6', color: 'white', textDecoration: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}
+                  >
+                    Unlock Full Audit →
+                  </Link>
+                </div>
+              )}
+
               {/* Recent findings table */}
               <div style={{ background: '#1a1a18', border: '1px solid #2a2a28', borderRadius: 8, overflow: 'hidden', marginTop: 24, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                 <div style={{ padding: '16px 20px', borderBottom: '1px solid #2a2a28', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -533,9 +565,14 @@ export default function Dashboard() {
                           {finding.title}
                         </td>
                         <td style={{ padding: '14px 20px', fontSize: 14, verticalAlign: 'middle' }}>
-                          {finding.estimatedMonthlySavings > 0
-                            ? <span style={{ color: '#3B82F6', fontWeight: 600 }}>${finding.estimatedMonthlySavings.toLocaleString()}/mo</span>
-                            : <span style={{ color: '#6b7280' }}>—</span>
+                          {!auditUnlocked
+                            ? <span
+                                title="Unlock full audit to see exact savings"
+                                style={{ color: '#6b7280', filter: 'blur(4px)', userSelect: 'none', cursor: 'help' }}
+                              >$$$$/mo</span>
+                            : finding.estimatedMonthlySavings > 0
+                              ? <span style={{ color: '#3B82F6', fontWeight: 600 }}>${finding.estimatedMonthlySavings.toLocaleString()}/mo</span>
+                              : <span style={{ color: '#6b7280' }}>—</span>
                           }
                         </td>
                       </tr>
@@ -556,7 +593,9 @@ export default function Dashboard() {
                       <div style={{ flex: 1, background: '#2a2a28', borderRadius: 4, height: 6 }}>
                         <div style={{ width: (total / maxSavings * 100) + '%', background: '#3B82F6', borderRadius: 4, height: 6 }} />
                       </div>
-                      <span style={{ width: 80, textAlign: 'right', fontSize: 13, color: '#3B82F6', fontWeight: 600 }}>
+                      <span style={{ width: 80, textAlign: 'right', fontSize: 13, color: '#3B82F6', fontWeight: 600,
+                        filter: auditUnlocked ? 'none' : 'blur(5px)', userSelect: auditUnlocked ? 'auto' : 'none', cursor: auditUnlocked ? 'auto' : 'help' }}
+                        title={auditUnlocked ? undefined : 'Unlock full audit to see exact amounts'}>
                         ${total.toLocaleString()}/mo
                       </span>
                     </div>
@@ -564,7 +603,7 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {isFree && (
+              {!auditUnlocked && (
                 <div style={{
                   marginTop: 24,
                   background: 'rgba(59,130,246,0.08)',
@@ -579,10 +618,10 @@ export default function Dashboard() {
                 }}>
                   <div>
                     <p style={{ fontSize: 14, fontWeight: 600, color: '#F5F4F0', margin: '0 0 4px' }}>
-                      🔒 Unlock AI-powered cost optimization
+                      🔒 Unlock full findings + Autopilot AI
                     </p>
                     <p style={{ fontSize: 13, color: '#9ca3af', margin: 0 }}>
-                      Upgrade to use Autopilot AI chat, execute fixes automatically, and view report history.
+                      One-time payment. See exact savings, fix instructions, and resource IDs. Only pay when we find waste.
                     </p>
                   </div>
                   <Link
@@ -593,7 +632,7 @@ export default function Dashboard() {
                       whiteSpace: 'nowrap', flexShrink: 0,
                     }}
                   >
-                    Upgrade Plan →
+                    Unlock Audit →
                   </Link>
                 </div>
               )}

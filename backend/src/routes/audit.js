@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { createClient } from '@supabase/supabase-js'
-import rateLimit from 'express-rate-limit'
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit'
 import { requireAuth } from '../middleware/auth.js'
 import { fetchAwsData } from '../services/awsFetcher.js'
 import { runAuditEngine } from '../services/auditEngine.js'
@@ -18,11 +18,12 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 const auditLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 5,
-  keyGenerator: (req) => req.user?.id || req.ip,
+  keyGenerator: (req) => req.user?.id || ipKeyGenerator(req),
   message: { error: 'Too many audit requests. Please wait before running another audit.' },
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { xForwardedForHeader: false }
+  passOnStoreError: true,
+  validate: { xForwardedForHeader: false },
 })
 
 router.use(requireAuth)
@@ -74,6 +75,12 @@ router.post('/run', auditLimiter, async (req, res, next) => {
       (sum, f) => sum + (typeof f.estimatedMonthlySavings === 'number' ? f.estimatedMonthlySavings : 0),
       0
     )
+
+    // Reset audit_unlocked when a new audit runs (new payment required)
+    await supabase
+      .from('profiles')
+      .update({ audit_unlocked: false, savings_found: totalSavings })
+      .eq('id', userId)
 
     const { data: report, error: reportError } = await supabase
       .from('audit_reports')
@@ -145,7 +152,30 @@ router.post('/run', auditLimiter, async (req, res, next) => {
       console.error('[Audit] Webhook delivery failed:', webhookErr.message)
     }
 
-    res.json({ success: true, reportId: report.id, findings, totalSavings })
+    // Gate findings for unpaid users — return category/title/severity only, redact amounts & ARNs
+    const { data: profileCheck } = await supabase
+      .from('profiles')
+      .select('audit_unlocked')
+      .eq('id', userId)
+      .single()
+
+    const gated = !profileCheck?.audit_unlocked
+    const responseFindings = gated
+      ? findings.map(f => ({
+          id: f.id,
+          severity: f.severity,
+          category: f.category,
+          title: f.title,
+          gated: true,
+          estimatedMonthlySavings: null,
+          description: null,
+          recommendation: null,
+          resourceId: null,
+          resourceArn: null,
+        }))
+      : findings
+
+    res.json({ success: true, reportId: report.id, findings: responseFindings, totalSavings, gated })
   } catch (err) {
     console.error('[Audit] Unhandled error:', err.message, err.stack)
     next(err)

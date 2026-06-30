@@ -45,7 +45,9 @@ export default function Autopilot() {
   const [awsAccount, setAwsAccount] = useState(null)
   const [latestReport, setLatestReport] = useState(null)
   const [userPlan, setUserPlan] = useState(null)
-  const isPaid = userPlan === 'standard' || userPlan === 'team' || userPlan === 'enterprise'
+  const [auditUnlocked, setAuditUnlocked] = useState(false)
+  const [savingsFound, setSavingsFound] = useState(0)
+  const isPaid = auditUnlocked
   const [hasAutopilotRole, setHasAutopilotRole] = useState(false)
 
   // Kept for setup banner (unused by chat, but wired to banner button)
@@ -68,12 +70,14 @@ export default function Autopilot() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('plan, full_name')
+        .select('plan, full_name, audit_unlocked, savings_found')
         .eq('id', session.user.id)
         .single()
 
       if (profile?.full_name) setDisplayName(profile.full_name)
       setUserPlan(profile?.plan)
+      setAuditUnlocked(profile?.audit_unlocked ?? false)
+      setSavingsFound(profile?.savings_found ?? 0)
 
       const { data: allAccounts } = await supabase
         .from('aws_accounts')
@@ -358,7 +362,7 @@ export default function Autopilot() {
         )}
 
         {/* ── CHAT CONTAINER ── */}
-        <FeatureGate isPaid={isPaid} message="Upgrade to unlock AI-powered cost optimization chat">
+        <FeatureGate isPaid={isPaid} savingsFound={savingsFound} message="Autopilot requires an unlocked audit">
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
 
           {/* Messages area */}

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vaultix AI — Backend Test Report v2</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;padding:2rem;min-height:100vh}
+
+.hero{background:linear-gradient(135deg,#1e3a8a 0%,#6d28d9 100%);border-radius:1rem;padding:2.5rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:2rem;flex-wrap:wrap}
+.hero-text{flex:1}
+.brand{font-size:2rem;font-weight:900;color:#fff}.brand span{color:#93c5fd}
+.sub{color:rgba(255,255,255,.7);margin-top:.25rem}
+.meta{color:rgba(255,255,255,.5);font-size:.8rem;margin-top:.6rem;line-height:1.9}
+.score-box{text-align:center;min-width:110px}
+.score-num{font-size:4rem;font-weight:900;color:#22c55e;line-height:1}
+.score-lbl{font-size:.7rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.1em}
+.grade{font-size:1.5rem;font-weight:800;color:#22c55e;margin-top:.2rem}
+
+.fixes-bar{background:#1e293b;border:1px solid #334155;border-radius:.75rem;padding:1rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.fixes-label{font-size:.8rem;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-right:.5rem}
+.fix-badge{font-size:.8rem;font-weight:700;padding:.3rem .7rem;border-radius:.35rem}
+.fix-pass{background:rgba(34,197,94,.15);color:#22c55e}
+.fix-fail{background:rgba(239,68,68,.15);color:#ef4444}
+
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.stat{background:#1e293b;border:1px solid #334155;border-radius:.75rem;padding:1.25rem;text-align:center}
+.stat-n{font-size:2.75rem;font-weight:900;line-height:1}
+.stat-l{font-size:.72rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;margin-top:.3rem}
+.c-b{color:#60a5fa}.c-g{color:#22c55e}.c-r{color:#ef4444}.c-y{color:#f59e0b}
+
+.cat{background:#1e293b;border:1px solid #334155;border-radius:.75rem;margin-bottom:1.25rem;overflow:hidden}
+.cat-hdr{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.5rem;border-bottom:1px solid #334155;flex-wrap:wrap;gap:.5rem}
+.cat-name{font-weight:700;font-size:1rem}
+.cat-chips{display:flex;align-items:center;gap:.4rem}
+.chip{font-size:.72rem;padding:.18rem .55rem;border-radius:9999px;font-weight:600}
+.chip-g{background:rgba(34,197,94,.15);color:#22c55e}
+.chip-r{background:rgba(239,68,68,.15);color:#ef4444}
+.chip-y{background:rgba(245,158,11,.15);color:#f59e0b}
+.cat-pct{font-size:1rem;font-weight:800;margin-left:.4rem}
+
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;padding:.55rem 1.5rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:#64748b;border-bottom:1px solid #334155}
+.tbl td{padding:.7rem 1.5rem;font-size:.875rem;border-bottom:1px solid rgba(51,65,85,.4);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.row-pass{background:rgba(34,197,94,.025)}
+.row-fail{background:rgba(239,68,68,.05)}
+.row-warn{background:rgba(245,158,11,.03)}
+
+.badge{font-size:.7rem;font-weight:700;padding:.15rem .45rem;border-radius:.2rem;white-space:nowrap;display:inline-block}
+.badge-pass{background:rgba(34,197,94,.15);color:#22c55e}
+.badge-fail{background:rgba(239,68,68,.15);color:#ef4444}
+.badge-warn{background:rgba(245,158,11,.15);color:#f59e0b}
+.tbl th:first-child,.tbl td:first-child{width:95px}
+.detail-cell{color:#64748b;font-family:Consolas,monospace;font-size:.8rem}
+.footer{text-align:center;color:#475569;font-size:.78rem;margin-top:2rem;padding-top:1rem;border-top:1px solid #1e293b}
+@media(max-width:640px){.grid{grid-template-columns:repeat(2,1fr)}.hero{flex-direction:column}.score-box{margin-left:0}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-text">
+    <div class="brand">Vaultix <span>AI</span></div>
+    <div class="sub">Backend Security &amp; Integration Test Report — v2 (Post-Fix)</div>
+    <div class="meta">
+      Run date: 6/29/2026, 1:01:19 AM<br>
+      Duration: 6.3s &nbsp;·&nbsp; 74 tests across 9 categories<br>
+      Target: http://localhost:3001 &nbsp;·&nbsp; Redis: ✗ offline (rate-limit headers in fallback mode)
+    </div>
+  </div>
+  <div class="score-box">
+    <div class="score-num">92</div>
+    <div class="score-lbl">/ 100 Score</div>
+    <div class="grade">Grade A</div>
+  </div>
+</div>
+
+<div class="fixes-bar">
+  <span class="fixes-label">4 Fixes Deployed</span>
+  <span class="fix-badge fix-pass">✓ Fix 1: X-Powered-By removed</span>
+  <span class="fix-badge fix-pass">✓ Fix 2: Helmet headers</span>
+  <span class="fix-badge fix-pass">✓ Fix 3: Audit limiter skip bug</span>
+  <span class="fix-badge fix-fail">✗ Fix 4: Global rate limiter</span>
+</div>
+
+<div class="grid">
+  <div class="stat"><div class="stat-n c-b">74</div><div class="stat-l">Total Tests</div></div>
+  <div class="stat"><div class="stat-n c-g">64</div><div class="stat-l">Passed</div></div>
+  <div class="stat"><div class="stat-n c-r">2</div><div class="stat-l">Failed</div></div>
+  <div class="stat"><div class="stat-n c-y">8</div><div class="stat-l">Warnings</div></div>
+</div>
+
+<div class="cat">
+  <div class="cat-hdr">
+    <span class="cat-name">Health Checks</span>
+    <span class="cat-chips">
+      <span class="chip chip-g">6 pass</span>
+      
+      
+      <span class="cat-pct" style="color:#22c55e">100%</span>
+    </span>
+  </div>
+  <table class="tbl">
+    <thead><tr><th>Status</th><th>Test</th><th>Detail</th></tr></thead>
+    <tbody><tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>GET /health returns 200 OK</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Response body has { status: &quot;ok&quot; }</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Response includes ISO timestamp</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Unknown route returns 404</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Response time 19ms &lt; 500ms</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Protected routes return 401 without auth</td>
+        <td class="detail-cell"></td>
+      </tr></tbody>
+  </table>
+</div>
+<div class="cat">
+  <div class="cat-hdr">
+    <span class="cat-name">Authentication</span>
+    <span class="cat-chips">
+      <span class="chip chip-g">8 pass</span>
+      
+      
+      <span class="cat-pct" style="color:#22c55e">100%</span>
+    </span>
+  </div>
+  <table class="tbl">
+    <thead><tr><th>Status</th><th>Test</th><th>Detail</th></tr></thead>
+    <tbody><tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Valid credentials accepted (issacguerrero67@gmail.com)</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Wrong password rejected</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Non-existent email rejected</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>No Authorization header → 401</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Garbage Bearer token → 401</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Non-Bearer scheme → 401</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Empty Bearer value → 401</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Valid JWT accepted → 200</td>
+        <td class="detail-cell"></td>
+      </tr></tbody>
+  </table>
+</div>
+<div class="cat">
+  <div class="cat-hdr">
+    <span class="cat-name">Input Validation</span>
+    <span class="cat-chips">
+      <span class="chip chip-g">18 pass</span>
+      
+      
+      <span class="cat-pct" style="color:#22c55e">100%</span>
+    </span>
+  </div>
+  <table class="tbl">
+    <thead><tr><th>Status</th><th>Test</th><th>Detail</th></tr></thead>
+    <tbody><tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Invalid roleArn rejected → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>SQL injection in roleArn rejected → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>XSS payload in roleArn rejected → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Missing roleArn → 400/422</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Valid roleArn format accepted → 201</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Empty body on /api/aws/verify → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Non-numeric accountId rejected → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>11-digit accountId rejected → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Missing tier in create-checkout → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Invalid tier value rejected → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>audit/run with missing aws_account_id → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>audit/run with invalid UUID → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>API key name &gt; 50 chars rejected → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>autopilot/generate with bad uuid → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>autopilot/approve with bad action_id → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>account/user DELETE without correct confirm token → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>autopilot/chat with no message → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>autopilot/chat with message &gt; 1000 chars → 400</td>
+        <td class="detail-cell"></td>
+      </tr></tbody>
+  </table>
+</div>
+<div class="cat">
+  <div class="cat-hdr">
+    <span class="cat-name">Rate Limiting</span>
+    <span class="cat-chips">
+      <span class="chip chip-g">2 pass</span>
+      
+      <span class="chip chip-y">5 warn</span>
+      <span class="cat-pct" style="color:#f59e0b">64%</span>
+    </span>
+  </div>
+  <table class="tbl">
+    <thead><tr><th>Status</th><th>Test</th><th>Detail</th></tr></thead>
+    <tbody><tr class="row-warn">
+        <td><span class="badge badge-warn">⚠ WARN</span></td>
+        <td>FIX 4 — Global limiter configured but Redis offline, headers absent (Redis offline — headers absent in fallback mode)</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-warn">
+        <td><span class="badge badge-warn">⚠ WARN</span></td>
+        <td>Global limiter limit check skipped (Redis offline — headers absent in fallback mode)</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>FIX 3 ✓ Audit rate limiter fires for auth&#039;d users (skip bug resolved)</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-warn">
+        <td><span class="badge badge-warn">⚠ WARN</span></td>
+        <td>Strict limiter check skipped (Redis offline — headers absent in fallback mode)</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-warn">
+        <td><span class="badge badge-warn">⚠ WARN</span></td>
+        <td>AWS connect limiter check skipped (Redis offline — headers absent in fallback mode)</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-warn">
+        <td><span class="badge badge-warn">⚠ WARN</span></td>
+        <td>Auth limiter check skipped (Redis offline — headers absent in fallback mode)</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>10 rapid unauthenticated requests — all 401 (auth gate intact)</td>
+        <td class="detail-cell"></td>
+      </tr></tbody>
+  </table>
+</div>
+<div class="cat">
+  <div class="cat-hdr">
+    <span class="cat-name">Stress Test</span>
+    <span class="cat-chips">
+      <span class="chip chip-g">3 pass</span>
+      
+      
+      <span class="cat-pct" style="color:#22c55e">100%</span>
+    </span>
+  </div>
+  <table class="tbl">
+    <thead><tr><th>Status</th><th>Test</th><th>Detail</th></tr></thead>
+    <tbody><tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>All 50 concurrent requests returned 200</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>p95 latency 32ms &lt; 1000ms</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Median latency 28ms &lt; 200ms</td>
+        <td class="detail-cell"></td>
+      </tr></tbody>
+  </table>
+</div>
+<div class="cat">
+  <div class="cat-hdr">
+    <span class="cat-name">Stripe Webhook</span>
+    <span class="cat-chips">
+      <span class="chip chip-g">5 pass</span>
+      
+      
+      <span class="cat-pct" style="color:#22c55e">100%</span>
+    </span>
+  </div>
+  <table class="tbl">
+    <thead><tr><th>Status</th><th>Test</th><th>Detail</th></tr></thead>
+    <tbody><tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>No stripe-signature header → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Invalid stripe-signature → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Malformed stripe-signature → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Empty body + fake signature → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Webhook uses sig verification not Bearer auth (correct design)</td>
+        <td class="detail-cell"></td>
+      </tr></tbody>
+  </table>
+</div>
+<div class="cat">
+  <div class="cat-hdr">
+    <span class="cat-name">CORS &amp; Security</span>
+    <span class="cat-chips">
+      <span class="chip chip-g">10 pass</span>
+      
+      
+      <span class="cat-pct" style="color:#22c55e">100%</span>
+    </span>
+  </div>
+  <table class="tbl">
+    <thead><tr><th>Status</th><th>Test</th><th>Detail</th></tr></thead>
+    <tbody><tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Origin: localhost:5173 → correct ACAO header</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Origin: www.vaultixai.app → correct ACAO header</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Access-Control-Allow-Credentials: true set</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Disallowed origin blocked (no ACAO echoed back)</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>FIX 1 ✓ X-Powered-By header suppressed</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Content-Type: application/json on JSON responses</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>FIX 2 ✓ Helmet headers present (X-Frame-Options, X-Content-Type-Options)</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>X-XSS-Protection header set (1; mode=block)</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Referrer-Policy header set (strict-origin-when-cross-origin)</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Permissions-Policy header set</td>
+        <td class="detail-cell"></td>
+      </tr></tbody>
+  </table>
+</div>
+<div class="cat">
+  <div class="cat-hdr">
+    <span class="cat-name">Business Logic</span>
+    <span class="cat-chips">
+      <span class="chip chip-g">7 pass</span>
+      <span class="chip chip-r">1 fail</span>
+      
+      <span class="cat-pct" style="color:#22c55e">88%</span>
+    </span>
+  </div>
+  <table class="tbl">
+    <thead><tr><th>Status</th><th>Test</th><th>Detail</th></tr></thead>
+    <tbody><tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>GET /api/reports → 200 with user-scoped reports array</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>GET /api/reports/:id → 200 (no data leakage for non-existent id)</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>GET /api/aws-accounts → 200 with accounts array</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>audit/run with non-owned account_id → 403 (not data-leaking 200)</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>Ownership check fires → 403 Access Denied (not 404 which leaks existence)</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-fail">
+        <td><span class="badge badge-fail">✗ FAIL</span></td>
+        <td>Create checkout without completed audit → 400</td>
+        <td class="detail-cell">got 500</td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>GET /api/stripe/status → {tier, subscriptionStatus, stripeCustomerId}</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>GET /api/autopilot/status/:id with bad UUID → 400</td>
+        <td class="detail-cell"></td>
+      </tr></tbody>
+  </table>
+</div>
+<div class="cat">
+  <div class="cat-hdr">
+    <span class="cat-name">New Routes</span>
+    <span class="cat-chips">
+      <span class="chip chip-g">5 pass</span>
+      <span class="chip chip-r">1 fail</span>
+      <span class="chip chip-y">3 warn</span>
+      <span class="cat-pct" style="color:#f59e0b">72%</span>
+    </span>
+  </div>
+  <table class="tbl">
+    <thead><tr><th>Status</th><th>Test</th><th>Detail</th></tr></thead>
+    <tbody><tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>GET /api/keys → 200 with keys array</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-fail">
+        <td><span class="badge badge-fail">✗ FAIL</span></td>
+        <td>POST /api/keys/generate → 200 with vx_... key</td>
+        <td class="detail-cell">500 — {&quot;error&quot;:&quot;An internal error occurred. Please try again.&quot;}</td>
+      </tr>
+<tr class="row-warn">
+        <td><span class="badge badge-warn">⚠ WARN</span></td>
+        <td>Generated key list check skipped</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-warn">
+        <td><span class="badge badge-warn">⚠ WARN</span></td>
+        <td>XSS sanitisation check skipped</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-warn">
+        <td><span class="badge badge-warn">⚠ WARN</span></td>
+        <td>Key revoke test skipped</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>DELETE /api/account/aws-accounts → 200 (disconnect all)</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>autopilot/approve-all without CONFIRM token → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>autopilot/execute with no approved actions → 400</td>
+        <td class="detail-cell"></td>
+      </tr>
+<tr class="row-pass">
+        <td><span class="badge badge-pass">✓ PASS</span></td>
+        <td>autopilot/approve with non-existent action_id → 404</td>
+        <td class="detail-cell"></td>
+      </tr></tbody>
+  </table>
+</div>
+
+<div class="footer">
+  Vaultix AI Backend Test Suite v2 &nbsp;·&nbsp; 2026-06-29T06:01:19.268Z
+</div>
+
+</body>
+</html>
