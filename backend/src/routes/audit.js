@@ -76,11 +76,19 @@ router.post('/run', auditLimiter, async (req, res, next) => {
       0
     )
 
-    // Reset audit_unlocked when a new audit runs (new payment required)
-    await supabase
+    // Reset audit_unlocked when a new audit runs — skip for demo accounts
+    const { data: profileMeta } = await supabase
       .from('profiles')
-      .update({ audit_unlocked: false, savings_found: totalSavings })
+      .select('is_demo_account')
       .eq('id', userId)
+      .single()
+
+    if (!profileMeta?.is_demo_account) {
+      await supabase
+        .from('profiles')
+        .update({ audit_unlocked: false, savings_found: totalSavings })
+        .eq('id', userId)
+    }
 
     const { data: report, error: reportError } = await supabase
       .from('audit_reports')

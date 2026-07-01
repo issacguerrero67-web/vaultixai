@@ -125,7 +125,7 @@ router.post('/create-payment-intent', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('plan_type, audit_unlocked, paid_at')
+      .select('plan_type, audit_unlocked, paid_at, is_demo_account')
       .eq('id', userId)
       .single()
 
@@ -137,6 +137,10 @@ router.post('/create-payment-intent', async (req, res) => {
   } catch (err) {
     console.error('[Stripe] Profile check error:', err.message)
     return res.status(502).json({ error: 'Unable to load account. Please try again.' })
+  }
+
+  if (profile?.is_demo_account) {
+    return res.status(403).json({ error: 'Demo accounts cannot be billed.' })
   }
 
   // Load the audit report
