@@ -32,8 +32,9 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
 const DEMO_EMAIL    = 'demo@vaultixai.app'
 const DEMO_PASSWORD = 'VaultixDemo2025!'   // public — only used for demo login
 const DEMO_NAME     = 'Demo Account'
-const DEMO_ACCOUNT_NAME = 'Acme Corp — Production (us-east-1)'
-const DEMO_AWS_ACCOUNT_ID = '482791053847'
+const DEMO_ACCOUNT_NAME    = 'Demo Company AWS'
+const DEMO_AWS_ACCOUNT_ID  = '123456789012'
+const DEMO_ROLE_ARN        = `arn:aws:iam::${DEMO_AWS_ACCOUNT_ID}:role/DemoRole`
 
 // ── FINDINGS ─────────────────────────────────────────────────────────────────
 // 8 realistic findings totalling $4,037.60/mo.
@@ -243,6 +244,7 @@ async function run() {
   // ── 2. Upsert profile ─────────────────────────────────────────────────────
   const { error: profileErr } = await supabase.from('profiles').upsert({
     id: userId,
+    email: DEMO_EMAIL,
     full_name: DEMO_NAME,
     plan: 'standard',
     plan_type: 'standard',
@@ -263,9 +265,8 @@ async function run() {
   }
   console.log('✓  Profile upserted (is_demo_account=true, audit_unlocked=true)')
 
-  // ── 3. Create or reuse the demo aws_accounts entry ────────────────────────
-  let awsAccountId
-
+  // ── 3. Upsert the demo aws_accounts entry ────────────────────────────────
+  // Delete any existing row so we can set exact column values on re-runs.
   const { data: existingAccounts } = await supabase
     .from('aws_accounts')
     .select('id')
@@ -273,21 +274,19 @@ async function run() {
     .limit(1)
 
   if (existingAccounts?.length) {
-    awsAccountId = existingAccounts[0].id
-    console.log(`✓  aws_accounts row already exists — ${awsAccountId}`)
-  } else {
-    const { data: acct, error: acctErr } = await supabase.from('aws_accounts').insert({
-      user_id: userId,
-      account_name: DEMO_ACCOUNT_NAME,
-      // Placeholder ARN — this account will never run a real audit
-      role_arn: `arn:aws:iam::${DEMO_AWS_ACCOUNT_ID}:role/VaultixReadOnlyRole`,
-      external_id: '00000000-demo-0000-0000-000000000000',
-    }).select().single()
-
-    if (acctErr) { console.error('❌  aws_accounts insert failed:', acctErr.message); process.exit(1) }
-    awsAccountId = acct.id
-    console.log(`✓  Created aws_accounts row — ${awsAccountId}`)
+    await supabase.from('aws_accounts').delete().eq('id', existingAccounts[0].id)
   }
+
+  const { data: acct, error: acctErr } = await supabase.from('aws_accounts').insert({
+    user_id: userId,
+    account_name: DEMO_ACCOUNT_NAME,
+    role_arn: DEMO_ROLE_ARN,
+    external_id: '00000000-demo-0000-0000-000000000000',
+  }).select().single()
+
+  if (acctErr) { console.error('❌  aws_accounts insert failed:', acctErr.message); process.exit(1) }
+  const awsAccountId = acct.id
+  console.log(`✓  aws_accounts row upserted — ${awsAccountId}`)
 
   // ── 4. Delete any existing audit reports for this account (idempotency) ───
   await supabase
