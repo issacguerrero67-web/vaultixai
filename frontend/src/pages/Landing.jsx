@@ -15,6 +15,8 @@ const MOBILE_CSS = `
     .hero-h1 { font-size: clamp(2rem, 8vw, 3.75rem) !important; }
     .hero-buttons { flex-direction: column !important; align-items: stretch !important; }
     .hero-btn { text-align: center !important; }
+    .hero-flex-row { flex-direction: column !important; }
+    .hero-right-col { width: 100% !important; flex: 1 1 auto !important; margin-top: 2.5rem !important; }
 
     .process-grid { grid-template-columns: 1fr !important; }
     .process-step-0,
@@ -128,6 +130,39 @@ function HeroRightColumn() {
       </div>
 
     </>
+  )
+}
+
+function HeroDemoVideo() {
+  return (
+    <div
+      style={{
+        borderRadius: 17,
+        padding: 1,
+        background: 'linear-gradient(135deg, rgba(59,130,246,0.55) 0%, rgba(59,130,246,0.05) 55%, rgba(59,130,246,0) 100%)',
+        boxShadow: '0 30px 70px -20px rgba(59,130,246,0.18)',
+      }}
+    >
+      <div
+        style={{
+          borderRadius: 16,
+          overflow: 'hidden',
+          background: '#0a0a09',
+          lineHeight: 0,
+        }}
+      >
+        <video
+          src="/demo/vaultix-demo-horizontal.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          controls={false}
+          preload="metadata"
+          style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 16 }}
+        />
+      </div>
+    </div>
   )
 }
 
@@ -280,7 +315,7 @@ export default function Landing() {
           position: 'absolute', inset: 0,
           background: 'linear-gradient(to bottom, rgba(17,17,16,0.2) 0%, rgba(17,17,16,0.6) 60%, #111110 100%)'
         }} />
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 1200, margin: '0 auto', padding: '0 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 48, width: '100%' }}>
+        <div className="hero-flex-row" style={{ position: 'relative', zIndex: 1, maxWidth: 1200, margin: '0 auto', padding: '0 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 48, width: '100%' }}>
           <div style={{ flex: '1 1 auto', minWidth: 0, maxWidth: 560 }}>
             <div>
               <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.12em', color: '#6b7280', textTransform: 'uppercase', marginBottom: 16 }}>CLOUD COST INTELLIGENCE</div>
@@ -345,11 +380,17 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="stats-card" style={{ display: 'flex', flexDirection: 'column', gap: 12, width: 380, flex: '0 0 380px', marginRight: 0 }}>
-            <HeroRightColumn />
+          <div className="hero-right-col" style={{ display: 'flex', flexDirection: 'column', gap: 24, width: 380, flex: '0 0 380px', marginRight: 0 }}>
+            <HeroDemoVideo />
+            <div className="stats-card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <HeroRightColumn />
+            </div>
           </div>
         </div>
       </section>
+
+      {/* HERO DIVIDER */}
+      <div style={{ height: 1, background: 'linear-gradient(to right, transparent 0%, rgba(59,130,246,0.35) 50%, transparent 100%)' }} />
 
       {/* PROCESS */}
       <section id="process" className="section-pad" style={{ background: '#0E0E0C', borderTop: '1px solid #1E1E1C', borderBottom: '1px solid #1E1E1C', padding: '5rem 2.5rem' }}>

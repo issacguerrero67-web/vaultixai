@@ -1,0 +1,24 @@
+{
+  "name": "vaultix-remotion-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "remotion studio",
+    "render:vertical": "remotion render VaultixDemoVertical out/vaultix-demo-vertical.mp4",
+    "render:horizontal": "remotion render VaultixDemoHorizontal out/vaultix-demo-horizontal.mp4",
+    "render:all": "npm run render:vertical && npm run render:horizontal"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.484",
+    "@remotion/google-fonts": "4.0.484",
+    "@remotion/transitions": "4.0.484",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "remotion": "4.0.484"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "typescript": "^5.5.4"
+  }
+}
