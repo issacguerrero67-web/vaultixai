@@ -341,15 +341,12 @@ export default function Autopilot() {
           </div>
         )}
 
-        {/* Autopilot role setup banner */}
-        {!hasAutopilotRole && awsAccount && (
-          <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 8, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, flexShrink: 0 }}>
-            <span style={{ fontSize: 13, color: '#f59e0b' }}>⚠ Deploy the Autopilot role to enable automated fix execution</span>
-            <button
-              onClick={() => window.open('https://console.aws.amazon.com/cloudformation/home#/stacks/create/review?templateURL=https://vaultixai-cloudformation-templates.s3.us-east-2.amazonaws.com/vaultix-autopilot-role.yaml&stackName=vaultix-autopilot-role', '_blank')}
-              style={{ background: 'none', border: '1px solid rgba(251,191,36,0.4)', color: '#f59e0b', borderRadius: 6, padding: '6px 14px', fontSize: 13, cursor: 'pointer' }}>
-              Deploy Now →
-            </button>
+        {/* Coming-soon banner — shown to all users with a connected account */}
+        {awsAccount && (
+          <div style={{ background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 8, padding: '12px 16px', marginBottom: 16, flexShrink: 0 }}>
+            <span style={{ fontSize: 13, color: '#9ca3af' }}>
+              ✦ Autopilot AI answers questions about your specific findings and helps you prioritize what to fix. Automated one-click execution is coming soon.
+            </span>
           </div>
         )}
 

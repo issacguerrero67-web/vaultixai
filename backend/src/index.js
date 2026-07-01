@@ -139,6 +139,8 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }))
 
 app.use(globalLimiter)
 app.use('/api/autopilot/chat', strictLimiter)
+app.use('/api/autopilot/execute', destructiveLimiter)
+app.use('/api/autopilot/approve-all', destructiveLimiter)
 app.use('/api/audit/run', strictLimiter)
 app.use('/api/aws/verify', awsConnectLimiter)
 app.use('/api/account/user', destructiveLimiter)
